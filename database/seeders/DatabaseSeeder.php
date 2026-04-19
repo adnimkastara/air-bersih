@@ -77,8 +77,9 @@ class DatabaseSeeder extends Seeder
         $desa = \App\Models\Desa::firstOrCreate(['name' => 'Desa Satu', 'kecamatan_id' => $kecamatan->id]);
 
         $pelanggan = \App\Models\Pelanggan::updateOrCreate([
-            'kode_pelanggan' => 'PLG-0001',
+            'email' => 'pelanggan1@example.com',
         ], [
+            'kode_pelanggan' => 'PLG-0001',
             'name' => 'Pelanggan Satu',
             'email' => 'pelanggan1@example.com',
             'phone' => '08123456789',
@@ -95,8 +96,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         \App\Models\Pelanggan::updateOrCreate([
-            'kode_pelanggan' => 'PLG-0002',
+            'email' => 'pelanggan2@example.com',
         ], [
+            'kode_pelanggan' => 'PLG-0002',
             'name' => 'Pelanggan Dua',
             'email' => 'pelanggan2@example.com',
             'phone' => '08139876543',
