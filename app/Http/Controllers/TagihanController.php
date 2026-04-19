@@ -12,20 +12,27 @@ class TagihanController extends Controller
 {
     public function index(Request $request)
     {
-        $this->refreshLateFees();
+        $this->refreshLateFees($request);
+
+        $tarifQuery = Tarif::orderByDesc('is_active')->orderBy('customer_type')->orderBy('name');
+        $tagihanQuery = Tagihan::with(['pelanggan', 'meterRecord', 'tarif'])
+            ->orderByDesc('period')
+            ->orderByDesc('created_at');
+
+        if (! $request->user()->isRoot()) {
+            $tagihanQuery->whereHas('pelanggan', fn ($query) => $query->where('desa_id', $request->user()->desa_id));
+        }
 
         return view('tagihan.index', [
-            'tarifs' => Tarif::orderByDesc('is_active')->orderBy('customer_type')->orderBy('name')->get(),
-            'tagihans' => Tagihan::with(['pelanggan', 'meterRecord', 'tarif'])
-                ->orderByDesc('period')
-                ->orderByDesc('created_at')
-                ->get(),
+            'tarifs' => $tarifQuery->get(),
+            'tagihans' => $tagihanQuery->get(),
             'selectedPeriod' => $request->input('period', now()->format('Y-m')),
         ]);
     }
 
-    public function show(Tagihan $tagihan)
+    public function show(Request $request, Tagihan $tagihan)
     {
+        $this->abortUnlessCanAccessDesa($request, $tagihan->pelanggan?->desa_id);
         $tagihan->load(['pelanggan', 'meterRecord', 'tarif', 'pembayarans.petugas']);
 
         return view('tagihan.show', [
@@ -46,6 +53,7 @@ class TagihanController extends Controller
 
         $meterRecords = MeterRecord::with('pelanggan')
             ->whereBetween('recorded_at', [$monthStart, $monthEnd])
+            ->when(! $request->user()->isRoot(), fn ($query) => $query->whereHas('pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id)))
             ->get();
 
         $created = 0;
@@ -109,6 +117,7 @@ class TagihanController extends Controller
 
     public function publish(Request $request, Tagihan $tagihan)
     {
+        $this->abortUnlessCanAccessDesa($request, $tagihan->pelanggan?->desa_id);
         $tagihan->status = 'terbit';
         $tagihan->save();
         $this->logActivity($request, 'publish_tagihan', Tagihan::class, $tagihan->id, "Menerbitkan tagihan {$tagihan->id}");
@@ -116,10 +125,11 @@ class TagihanController extends Controller
         return back()->with('status', 'Tagihan berhasil diterbitkan.');
     }
 
-    private function refreshLateFees(): void
+    private function refreshLateFees(Request $request): void
     {
-        $openBills = Tagihan::with('tarif')
+        $openBills = Tagihan::with(['tarif', 'pelanggan'])
             ->whereIn('status', ['draft', 'terbit', 'menunggak'])
+            ->when(! $request->user()->isRoot(), fn ($query) => $query->whereHas('pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id)))
             ->get();
 
         foreach ($openBills as $bill) {

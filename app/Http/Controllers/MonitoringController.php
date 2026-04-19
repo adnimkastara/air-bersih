@@ -18,18 +18,21 @@ class MonitoringController extends Controller
             'pelanggan_id' => ['nullable', 'integer', 'exists:pelanggans,id'],
         ]);
 
-        $pelanggans = Pelanggan::with(['desa', 'kecamatan'])
+        $pelangganQuery = Pelanggan::with(['desa', 'kecamatan']);
+        $pelanggans = $pelangganQuery
             ->withCount([
                 'tagihans as menunggak_count' => fn ($query) => $query->where('status', 'menunggak'),
                 'laporanGangguans as gangguan_aktif_count' => fn ($query) => $query->where('jenis_laporan', 'gangguan')->whereIn('status_penanganan', ['baru', 'diproses']),
             ])
             ->orderBy('name')
+            ->when(! $request->user()->isRoot(), fn ($query) => $query->where('desa_id', $request->user()->desa_id))
             ->get()
             ->map(function ($pelanggan) {
                 $pelanggan->monitoring_status = $this->resolveStatus($pelanggan);
 
                 return $pelanggan;
             });
+
 
         if (! empty($filters['status'])) {
             $pelanggans = $pelanggans->filter(fn ($pelanggan) => $pelanggan->monitoring_status === $filters['status'])->values();
@@ -38,6 +41,10 @@ class MonitoringController extends Controller
         $laporanQuery = LaporanGangguan::with(['pelanggan', 'reporter'])
             ->latest('reported_at')
             ->latest('created_at');
+
+        if (! $request->user()->isRoot()) {
+            $laporanQuery->whereHas('pelanggan', fn ($query) => $query->where('desa_id', $request->user()->desa_id));
+        }
 
         if (! empty($filters['jenis_laporan'])) {
             $laporanQuery->where('jenis_laporan', $filters['jenis_laporan']);
@@ -54,7 +61,7 @@ class MonitoringController extends Controller
         return view('monitoring.index', [
             'filters' => $filters,
             'pelanggans' => $pelanggans,
-            'pelangganOptions' => Pelanggan::orderBy('name')->get(['id', 'name', 'kode_pelanggan']),
+            'pelangganOptions' => Pelanggan::when(! $request->user()->isRoot(), fn ($query) => $query->where('desa_id', $request->user()->desa_id))->orderBy('name')->get(['id', 'name', 'kode_pelanggan']),
             'laporans' => $laporanQuery->paginate(10)->withQueryString(),
             'mapPoints' => $pelanggans
                 ->filter(fn ($pelanggan) => $pelanggan->latitude && $pelanggan->longitude)
@@ -80,6 +87,9 @@ class MonitoringController extends Controller
             'status_penanganan' => ['required', 'in:baru,diproses,selesai'],
             'foto_gangguan' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ]);
+
+        $pelanggan = Pelanggan::findOrFail($data['pelanggan_id']);
+        $this->abortUnlessCanAccessDesa($request, $pelanggan->desa_id);
 
         $fotoPath = $request->hasFile('foto_gangguan')
             ? $request->file('foto_gangguan')->store('gangguan', 'public')

@@ -1,71 +1,90 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Users</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
-    <style>
-        body { margin:0; min-height:100vh; font-family:'Instrument Sans',sans-serif; background:#f8fafc; }
-        .container { width:min(1100px,95vw); margin:40px auto; padding:24px; background:#fff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 18px 55px rgba(15,23,42,.08); }
-        h1 { margin-top:0; color:#0f172a; }
-        .message { padding:16px; margin-bottom:20px; border-radius:14px; background:#ecfccb; color:#365314; border:1px solid #d9f99d; }
-        table { width:100%; border-collapse:collapse; margin-top:20px; }
-        th, td { padding:16px 12px; border-bottom:1px solid #e2e8f0; text-align:left; }
-        th { background:#f8fafc; color:#0f172a; }
-        select, button { padding:10px 14px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; }
-        button { cursor:pointer; background:#0f172a; color:#fff; border:1px solid transparent; }
-        .actions { display:flex; gap:8px; align-items:center; }
-        .button { display:inline-flex; align-items:center; justify-content:center; padding:14px 20px; border-radius:12px; background:#0f172a; color:#fff; text-decoration:none; font-weight:600; margin-top:20px; }
-        .role-label { text-transform:capitalize; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>User Management</h1>
+@extends('layouts.admin')
 
-        @if(session('status'))
-            <div class="message">{{ session('status') }}</div>
-        @endif
+@section('title', 'User Management')
 
-        <p>Manage user roles for the application. Select a new role and submit to update a user's assignment.</p>
+@section('content')
+    <div class="card">
+        <h2>User Management</h2>
+        @if(session('status')) <div class="alert alert-success">{{ session('status') }}</div> @endif
+        @if ($errors->any()) <div class="alert alert-danger">{{ $errors->first() }}</div> @endif
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Current Role</th>
-                    <th>Change Role</th>
-                </tr>
-            </thead>
-            <tbody>
+        <h3>Tambah User</h3>
+        <form method="POST" action="{{ route('users.store') }}" class="grid-2">
+            @csrf
+            <div><label>Nama</label><input name="name" required></div>
+            <div><label>Email</label><input type="email" name="email" required></div>
+            @if($actor->isRoot())
+                <div>
+                    <label>Desa</label>
+                    <select name="desa_id" required>
+                        <option value="">-- Pilih Desa --</option>
+                        @foreach($desas as $desa)
+                            <option value="{{ $desa->id }}">{{ $desa->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+            @if($actor->isAdminDesa())
+                <div>
+                    <label>Jenis Petugas</label>
+                    <select name="petugas_subtype" required>
+                        <option value="pencatat_meter">Pencatat Meter</option>
+                        <option value="penagih_iuran">Penagih Iuran</option>
+                    </select>
+                </div>
+            @endif
+            <div><label>Password</label><input type="password" name="password" required></div>
+            <div><label>Konfirmasi Password</label><input type="password" name="password_confirmation" required></div>
+            <div class="full"><button class="btn btn-primary" type="submit">Simpan User</button></div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Daftar User</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr><th>Nama</th><th>Email</th><th>Role</th><th>Desa</th><th>Subtype</th><th>Aksi</th></tr>
+                </thead>
+                <tbody>
                 @foreach($users as $managedUser)
                     <tr>
                         <td>{{ $managedUser->name }}</td>
                         <td>{{ $managedUser->email }}</td>
-                        <td class="role-label">{{ $managedUser->role?->name ?? 'None' }}</td>
+                        <td>{{ $managedUser->role?->name }}</td>
+                        <td>{{ $managedUser->desa?->name ?? '-' }}</td>
+                        <td>{{ $managedUser->petugas_subtype ?? '-' }}</td>
                         <td>
-                            <form method="POST" action="{{ route('admin.users.updateRole', ['user' => $managedUser->id]) }}">
-                                @csrf
-                                @method('PUT')
-
-                                <select name="role" aria-label="Role for {{ $managedUser->name }}">
-                                    @foreach($roles as $role)
-                                        <option value="{{ $role->name }}" {{ $managedUser->role?->name === $role->name ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>
-                                    @endforeach
-                                </select>
-                                <button type="submit">Save</button>
+                            <form method="POST" action="{{ route('users.update', $managedUser) }}" style="display:grid;gap:8px;margin-bottom:8px;">
+                                @csrf @method('PUT')
+                                <input name="name" value="{{ $managedUser->name }}" required>
+                                <input type="email" name="email" value="{{ $managedUser->email }}" required>
+                                @if($actor->isRoot() && $managedUser->hasRole('admin_desa'))
+                                    <select name="desa_id" required>
+                                        @foreach($desas as $desa)
+                                            <option value="{{ $desa->id }}" @selected($managedUser->desa_id === $desa->id)>{{ $desa->name }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                                @if($managedUser->hasRole('petugas_lapangan'))
+                                    <select name="petugas_subtype">
+                                        <option value="pencatat_meter" @selected($managedUser->petugas_subtype === 'pencatat_meter')>Pencatat Meter</option>
+                                        <option value="penagih_iuran" @selected($managedUser->petugas_subtype === 'penagih_iuran')>Penagih Iuran</option>
+                                    </select>
+                                @endif
+                                <button class="btn btn-outline btn-sm" type="submit">Update</button>
+                            </form>
+                            <form method="POST" action="{{ route('users.reset-password', $managedUser) }}" style="display:grid;gap:8px;">
+                                @csrf @method('PUT')
+                                <input type="password" name="password" placeholder="Password baru" required>
+                                <input type="password" name="password_confirmation" placeholder="Konfirmasi" required>
+                                <button class="btn btn-danger btn-sm" type="submit">Reset Password</button>
                             </form>
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-
-        <a href="{{ route('admin') }}" class="button">Back to Admin</a>
-        <a href="{{ route('dashboard') }}" class="button" style="margin-left:12px;background:#475569;">Back to Dashboard</a>
+                </tbody>
+            </table>
+        </div>
     </div>
-</body>
-</html>
+@endsection

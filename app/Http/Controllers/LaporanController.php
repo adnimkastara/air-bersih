@@ -16,7 +16,7 @@ class LaporanController extends Controller
 {
     public function index(Request $request)
     {
-        $filters = $this->validateFilters($request);
+        $filters = $this->applyRoleFilter($request, $this->validateFilters($request));
         $reports = $this->buildReports($filters);
 
         return view('laporan.index', [
@@ -28,7 +28,7 @@ class LaporanController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $filters = $this->validateFilters($request);
+        $filters = $this->applyRoleFilter($request, $this->validateFilters($request));
         $report = $request->validate([
             'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan'],
         ])['report'];
@@ -47,7 +47,7 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $filters = $this->validateFilters($request);
+        $filters = $this->applyRoleFilter($request, $this->validateFilters($request));
         $report = $request->validate([
             'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan'],
         ])['report'];
@@ -88,6 +88,18 @@ class LaporanController extends Controller
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
+
+
+    private function applyRoleFilter(Request $request, array $filters): array
+    {
+        if ($request->user()->isRoot()) {
+            return $filters;
+        }
+
+        $filters['desa_id'] = $request->user()->desa_id;
+
+        return $filters;
     }
 
     private function validateFilters(Request $request): array

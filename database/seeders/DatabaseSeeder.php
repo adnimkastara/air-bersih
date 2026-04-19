@@ -14,70 +14,45 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         $rootRole = Role::firstOrCreate(['name' => 'root']);
-        $adminKecamatanRole = Role::firstOrCreate(['name' => 'admin_kecamatan']);
         $adminDesaRole = Role::firstOrCreate(['name' => 'admin_desa']);
         $petugasRole = Role::firstOrCreate(['name' => 'petugas_lapangan']);
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $userRole = Role::firstOrCreate(['name' => 'user']);
-
-        User::firstOrCreate([
-            'email' => 'root@airbersih.com',
-        ], [
-            'name' => 'Root Admin',
-            'password' => Hash::make('Admin1234!'),
-            'role_id' => $rootRole->id,
-        ]);
-
-        User::firstOrCreate([
-            'email' => 'admin@airbersih.com',
-        ], [
-            'name' => 'System Admin',
-            'password' => Hash::make('Admin1234!'),
-            'role_id' => $adminRole->id,
-        ]);
-
-        User::firstOrCreate([
-            'email' => 'kecamatan@airbersih.com',
-        ], [
-            'name' => 'Admin Kecamatan',
-            'password' => Hash::make('Admin1234!'),
-            'role_id' => $adminKecamatanRole->id,
-        ]);
-
-        User::firstOrCreate([
-            'email' => 'desa@airbersih.com',
-        ], [
-            'name' => 'Admin Desa',
-            'password' => Hash::make('Admin1234!'),
-            'role_id' => $adminDesaRole->id,
-        ]);
-
-        $petugas = User::firstOrCreate([
-            'email' => 'petugas@airbersih.com',
-        ], [
-            'name' => 'Petugas Lapangan',
-            'password' => Hash::make('Petugas123!'),
-            'role_id' => $petugasRole->id,
-        ]);
-
-        User::firstOrCreate([
-            'email' => 'user@airbersih.com',
-        ], [
-            'name' => 'User Umum',
-            'password' => Hash::make('User12345!'),
-            'role_id' => $userRole->id,
-        ]);
 
         $kecamatan = \App\Models\Kecamatan::firstOrCreate(['name' => 'Kecamatan Utama']);
         $desa = \App\Models\Desa::firstOrCreate([
             'name' => 'Desa Satu',
             'kecamatan_id' => $kecamatan->id,
+        ]);
+
+        User::firstOrCreate(['email' => 'root@airbersih.com'], [
+            'name' => 'Root Admin',
+            'password' => Hash::make('Admin1234!'),
+            'role_id' => $rootRole->id,
+        ]);
+
+        User::firstOrCreate(['email' => 'admin.desa@airbersih.com'], [
+            'name' => 'Admin Desa Satu',
+            'password' => Hash::make('Admin1234!'),
+            'role_id' => $adminDesaRole->id,
+            'desa_id' => $desa->id,
+        ]);
+
+        $petugas = User::firstOrCreate(['email' => 'pencatat.meter@airbersih.com'], [
+            'name' => 'Pencatat Meter Desa Satu',
+            'password' => Hash::make('Petugas123!'),
+            'role_id' => $petugasRole->id,
+            'desa_id' => $desa->id,
+            'petugas_subtype' => 'pencatat_meter',
+        ]);
+
+        User::firstOrCreate(['email' => 'penagih.iuran@airbersih.com'], [
+            'name' => 'Penagih Iuran Desa Satu',
+            'password' => Hash::make('Petugas123!'),
+            'role_id' => $petugasRole->id,
+            'desa_id' => $desa->id,
+            'petugas_subtype' => 'penagih_iuran',
         ]);
 
         $pelanggan = \App\Models\Pelanggan::updateOrCreate([
@@ -110,36 +85,6 @@ class DatabaseSeeder extends Seeder
             'effective_start' => Carbon::now()->startOfYear()->toDateString(),
         ]);
 
-        Tarif::firstOrCreate([
-            'name' => 'Tarif Niaga',
-            'customer_type' => 'niaga',
-        ], [
-            'base_rate' => 15000,
-            'usage_rate' => 2200,
-            'late_fee_per_day' => 3000,
-            'is_active' => true,
-            'effective_start' => Carbon::now()->startOfYear()->toDateString(),
-        ]);
-
-        \App\Models\Pelanggan::updateOrCreate([
-            'email' => 'pelanggan2@example.com',
-        ], [
-            'kode_pelanggan' => 'PLG-0002',
-            'name' => 'Pelanggan Dua',
-            'email' => 'pelanggan2@example.com',
-            'phone' => '08139876543',
-            'address' => 'Jalan Contoh No.2',
-            'dusun' => 'Dusun Anggrek',
-            'jenis_pelanggan' => 'niaga',
-            'nomor_meter' => 'MTR-10002',
-            'kecamatan_id' => $kecamatan->id,
-            'desa_id' => $desa->id,
-            'status' => 'nonaktif',
-            'latitude' => -6.2015000,
-            'longitude' => 106.8185000,
-            'assigned_petugas_id' => $petugas->id,
-        ]);
-
         $meterRecord = \App\Models\MeterRecord::firstOrCreate([
             'pelanggan_id' => $pelanggan->id,
             'recorded_at' => Carbon::now()->startOfMonth(),
@@ -166,22 +111,6 @@ class DatabaseSeeder extends Seeder
             'generated_at' => now(),
         ]);
 
-        \App\Models\Tagihan::firstOrCreate([
-            'pelanggan_id' => $pelanggan->id,
-            'period' => Carbon::now()->subMonth()->format('Y-m'),
-        ], [
-            'meter_record_id' => $meterRecord->id,
-            'tarif_id' => $tarifRumahTangga->id,
-            'amount' => 68000,
-            'status' => 'menunggak',
-            'due_date' => Carbon::now()->subDays(7)->toDateString(),
-            'usage_m3' => 40,
-            'base_amount' => 10000,
-            'usage_amount' => 55000,
-            'late_fee' => 3000,
-            'generated_at' => now()->subMonth(),
-        ]);
-
         \App\Models\Pembayaran::firstOrCreate([
             'tagihan_id' => $tagihanTerbit->id,
             'paid_at' => Carbon::now()->toDateString(),
@@ -189,15 +118,6 @@ class DatabaseSeeder extends Seeder
             'petugas_id' => $petugas->id,
             'amount' => 75000,
             'notes' => 'Pembayaran contoh lunas di loket desa.',
-        ]);
-
-        \App\Models\ActivityLog::firstOrCreate([
-            'action' => 'gangguan_pipa',
-            'subject_type' => 'pelanggan',
-            'subject_id' => $pelanggan->id,
-        ], [
-            'user_id' => $petugas->id,
-            'description' => 'Laporan gangguan aliran air di RT 01.',
         ]);
     }
 }

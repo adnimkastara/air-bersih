@@ -10,17 +10,29 @@ class PembayaranController extends Controller
 {
     private const PAYMENT_METHODS = ['tunai', 'transfer_bank', 'e_wallet'];
 
-    public function index()
+    public function index(Request $request)
     {
+        $query = Pembayaran::with(['tagihan.pelanggan', 'petugas'])->orderByDesc('paid_at');
+
+        if (! $request->user()->isRoot()) {
+            $query->whereHas('tagihan.pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id));
+        }
+
         return view('pembayaran.index', [
-            'pembayarans' => Pembayaran::with(['tagihan.pelanggan', 'petugas'])->orderByDesc('paid_at')->get(),
+            'pembayarans' => $query->get(),
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $query = Tagihan::whereIn('status', ['draft', 'terbit', 'menunggak'])->with('pelanggan')->orderBy('due_date');
+
+        if (! $request->user()->isRoot()) {
+            $query->whereHas('pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id));
+        }
+
         return view('pembayaran.create', [
-            'tagihans' => Tagihan::whereIn('status', ['draft', 'terbit', 'menunggak'])->with('pelanggan')->orderBy('due_date')->get(),
+            'tagihans' => $query->get(),
             'paymentMethods' => self::PAYMENT_METHODS,
         ]);
     }
@@ -36,7 +48,8 @@ class PembayaranController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $tagihan = Tagihan::findOrFail($data['tagihan_id']);
+        $tagihan = Tagihan::with('pelanggan')->findOrFail($data['tagihan_id']);
+        $this->abortUnlessCanAccessDesa($request, $tagihan->pelanggan?->desa_id);
 
         if ($request->hasFile('proof')) {
             $data['proof_path'] = $request->file('proof')->store('payment-proofs', 'public');
@@ -60,10 +73,13 @@ class PembayaranController extends Controller
         return redirect()->route('pembayaran.index')->with('status', 'Pembayaran berhasil dicatat.');
     }
 
-    public function receipt(Pembayaran $pembayaran)
+    public function receipt(Request $request, Pembayaran $pembayaran)
     {
+        $pembayaran->load('tagihan.pelanggan', 'petugas');
+        $this->abortUnlessCanAccessDesa($request, $pembayaran->tagihan?->pelanggan?->desa_id);
+
         return view('pembayaran.receipt', [
-            'pembayaran' => $pembayaran->load('tagihan.pelanggan', 'petugas'),
+            'pembayaran' => $pembayaran,
         ]);
     }
 }

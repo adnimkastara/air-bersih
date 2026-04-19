@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 abstract class Controller
@@ -16,5 +17,25 @@ abstract class Controller
             'subject_id' => $subjectId,
             'description' => $description,
         ]);
+    }
+
+    protected function scopeByDesa(Request $request, Builder $query, string $column = 'desa_id'): Builder
+    {
+        $user = $request->user();
+
+        if ($user?->isRoot()) {
+            return $query;
+        }
+
+        return $query->where($column, $user?->desa_id);
+    }
+
+    protected function abortUnlessCanAccessDesa(Request $request, int|string|null $desaId): void
+    {
+        $user = $request->user();
+
+        if (! $user || ! $user->canAccessVillage($desaId)) {
+            abort(403, 'Anda tidak boleh mengakses data desa lain.');
+        }
     }
 }
