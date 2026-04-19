@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Role;
+use App\Models\Tarif;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -98,6 +99,28 @@ class DatabaseSeeder extends Seeder
             'assigned_petugas_id' => $petugas->id,
         ]);
 
+        $tarifRumahTangga = Tarif::firstOrCreate([
+            'name' => 'Tarif Rumah Tangga',
+            'customer_type' => 'rumah_tangga',
+        ], [
+            'base_rate' => 10000,
+            'usage_rate' => 1500,
+            'late_fee_per_day' => 2000,
+            'is_active' => true,
+            'effective_start' => Carbon::now()->startOfYear()->toDateString(),
+        ]);
+
+        Tarif::firstOrCreate([
+            'name' => 'Tarif Niaga',
+            'customer_type' => 'niaga',
+        ], [
+            'base_rate' => 15000,
+            'usage_rate' => 2200,
+            'late_fee_per_day' => 3000,
+            'is_active' => true,
+            'effective_start' => Carbon::now()->startOfYear()->toDateString(),
+        ]);
+
         \App\Models\Pelanggan::updateOrCreate([
             'email' => 'pelanggan2@example.com',
         ], [
@@ -132,9 +155,15 @@ class DatabaseSeeder extends Seeder
             'period' => Carbon::now()->format('Y-m'),
         ], [
             'meter_record_id' => $meterRecord->id,
+            'tarif_id' => $tarifRumahTangga->id,
             'amount' => 75000,
             'status' => 'terbit',
             'due_date' => Carbon::now()->addDays(10)->toDateString(),
+            'usage_m3' => 50,
+            'base_amount' => 10000,
+            'usage_amount' => 65000,
+            'late_fee' => 0,
+            'generated_at' => now(),
         ]);
 
         \App\Models\Tagihan::firstOrCreate([
@@ -142,9 +171,15 @@ class DatabaseSeeder extends Seeder
             'period' => Carbon::now()->subMonth()->format('Y-m'),
         ], [
             'meter_record_id' => $meterRecord->id,
+            'tarif_id' => $tarifRumahTangga->id,
             'amount' => 68000,
             'status' => 'menunggak',
             'due_date' => Carbon::now()->subDays(7)->toDateString(),
+            'usage_m3' => 40,
+            'base_amount' => 10000,
+            'usage_amount' => 55000,
+            'late_fee' => 3000,
+            'generated_at' => now()->subMonth(),
         ]);
 
         \App\Models\Pembayaran::firstOrCreate([

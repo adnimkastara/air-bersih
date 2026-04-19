@@ -12,15 +12,27 @@ class Tagihan extends Model
     protected $fillable = [
         'pelanggan_id',
         'meter_record_id',
+        'tarif_id',
         'amount',
         'status',
         'due_date',
         'period',
+        'usage_m3',
+        'base_amount',
+        'usage_amount',
+        'late_fee',
+        'generated_at',
     ];
 
     protected $casts = [
         'due_date' => 'date',
+        'generated_at' => 'datetime',
     ];
+
+    public function tarif()
+    {
+        return $this->belongsTo(Tarif::class);
+    }
 
     public function pelanggan()
     {

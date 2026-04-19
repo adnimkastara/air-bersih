@@ -51,6 +51,20 @@ class Pelanggan extends Model
         return $this->hasMany(MeterRecord::class);
     }
 
+
+    public function activeTarif()
+    {
+        return Tarif::query()
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $query->where('customer_type', $this->jenis_pelanggan)
+                    ->orWhereNull('customer_type');
+            })
+            ->orderByRaw('customer_type is null')
+            ->orderByDesc('effective_start')
+            ->first();
+    }
+
     public function tagihans()
     {
         return $this->hasMany(Tagihan::class);
