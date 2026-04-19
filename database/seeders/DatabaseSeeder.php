@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AppSetting;
 use App\Models\Role;
 use App\Models\Tarif;
 use App\Models\User;
@@ -29,12 +30,14 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(['email' => 'root@airbersih.com'], [
             'name' => 'Root Admin',
             'password' => Hash::make('Admin1234!'),
+            'is_active' => true,
             'role_id' => $rootRole->id,
         ]);
 
         User::firstOrCreate(['email' => 'admin.desa@airbersih.com'], [
             'name' => 'Admin Desa Satu',
             'password' => Hash::make('Admin1234!'),
+            'is_active' => true,
             'role_id' => $adminDesaRole->id,
             'desa_id' => $desa->id,
         ]);
@@ -42,6 +45,7 @@ class DatabaseSeeder extends Seeder
         $petugas = User::firstOrCreate(['email' => 'pencatat.meter@airbersih.com'], [
             'name' => 'Pencatat Meter Desa Satu',
             'password' => Hash::make('Petugas123!'),
+            'is_active' => true,
             'role_id' => $petugasRole->id,
             'desa_id' => $desa->id,
             'petugas_subtype' => 'pencatat_meter',
@@ -50,10 +54,32 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(['email' => 'penagih.iuran@airbersih.com'], [
             'name' => 'Penagih Iuran Desa Satu',
             'password' => Hash::make('Petugas123!'),
+            'is_active' => true,
             'role_id' => $petugasRole->id,
             'desa_id' => $desa->id,
             'petugas_subtype' => 'penagih_iuran',
         ]);
+
+        AppSetting::updateOrCreate(
+            ['scope_key' => AppSetting::scopeKeyForGlobal()],
+            [
+                'scope_type' => AppSetting::SCOPE_GLOBAL,
+                'nama_kecamatan' => 'Kecamatan Utama',
+                'nama_unit_pengelola' => 'Pengelola Air Bersih Kecamatan Utama',
+                'tipe_pengelola' => 'BUMDES',
+                'nama_aplikasi' => 'Air Bersih Desa',
+            ]
+        );
+
+        AppSetting::updateOrCreate(
+            ['scope_key' => AppSetting::scopeKeyForDesa($desa->id)],
+            [
+                'scope_type' => AppSetting::SCOPE_DESA,
+                'desa_id' => $desa->id,
+                'nama_unit_pengelola' => 'BUMDES Berkah Mulya Desa Satu',
+                'tipe_pengelola' => 'BUMDES',
+            ]
+        );
 
         $pelanggan = \App\Models\Pelanggan::updateOrCreate([
             'email' => 'pelanggan1@example.com',

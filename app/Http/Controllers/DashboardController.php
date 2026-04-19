@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\AppSetting;
 use App\Models\Pelanggan;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
@@ -25,7 +26,7 @@ class DashboardController extends Controller
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
                     ['label' => 'Monitoring', 'route' => 'monitoring.index'],
                     ['label' => 'Laporan Desa', 'route' => 'laporan.index'],
-                    ['label' => 'User Petugas', 'route' => 'users.index'],
+                    ['label' => 'User Petugas', 'route' => 'settings.users.index'],
                 ],
             ],
             'petugas_lapangan' => [
@@ -50,10 +51,15 @@ class DashboardController extends Controller
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
                     ['label' => 'Monitoring', 'route' => 'monitoring.index'],
                     ['label' => 'Laporan', 'route' => 'laporan.index'],
-                    ['label' => 'User Management', 'route' => 'users.index'],
+                    ['label' => 'User Management', 'route' => 'settings.users.index'],
                 ],
             ],
         };
+
+
+        $identitySetting = AppSetting::resolveForUser($user);
+        $namaUnitPengelola = $identitySetting?->nama_unit_pengelola;
+        $namaKecamatan = $identitySetting?->nama_kecamatan;
 
         $pelangganQuery = Pelanggan::query();
         $tagihanQuery = Tagihan::query();
@@ -82,6 +88,8 @@ class DashboardController extends Controller
             'totalPembayaran' => $pembayaranQuery->count(),
             'totalTunggakan' => (clone $tagihanQuery)->where('status', 'menunggak')->count(),
             'totalGangguan' => $gangguanQuery->count(),
+            'namaUnitPengelola' => $namaUnitPengelola,
+            'namaKecamatan' => $namaKecamatan,
         ]);
     }
 }
