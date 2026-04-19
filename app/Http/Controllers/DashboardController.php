@@ -27,6 +27,7 @@ class DashboardController extends Controller
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
                     ['label' => 'Monitoring Map', 'route' => 'monitoring.index'],
                     ['label' => 'Manajemen Role', 'route' => 'admin.users'],
+                    ['label' => 'Modul Laporan', 'route' => 'laporan.index'],
                 ],
             ],
             'admin_desa' => [
@@ -38,6 +39,7 @@ class DashboardController extends Controller
                     ['label' => 'Tagihan', 'route' => 'tagihan.index'],
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
                     ['label' => 'Monitoring Map', 'route' => 'monitoring.index'],
+                    ['label' => 'Modul Laporan', 'route' => 'laporan.index'],
                 ],
             ],
             'petugas_lapangan' => [
@@ -49,6 +51,7 @@ class DashboardController extends Controller
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
                     ['label' => 'Input Pembayaran', 'route' => 'pembayaran.create'],
                     ['label' => 'Monitoring Map', 'route' => 'monitoring.index'],
+                    ['label' => 'Modul Laporan', 'route' => 'laporan.index'],
                 ],
             ],
             default => [
@@ -62,6 +65,7 @@ class DashboardController extends Controller
                     ['label' => 'Tagihan', 'route' => 'tagihan.index'],
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
                     ['label' => 'Monitoring Map', 'route' => 'monitoring.index'],
+                    ['label' => 'Modul Laporan', 'route' => 'laporan.index'],
                 ],
             ],
         };
