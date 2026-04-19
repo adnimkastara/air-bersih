@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('desa', DesaController::class)->except(['show']);
         Route::resource('pelanggan', PelangganController::class);
         Route::get('/tagihan', [TagihanController::class, 'index'])->name('tagihan.index');
+        Route::get('/tagihan/{tagihan}', [TagihanController::class, 'show'])->name('tagihan.show');
         Route::post('/tagihan/generate', [TagihanController::class, 'generate'])->name('tagihan.generate');
         Route::post('/tagihan/{tagihan}/publish', [TagihanController::class, 'publish'])->name('tagihan.publish');
     });
