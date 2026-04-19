@@ -1,16 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah Pelanggan</title>
-    <style>body{font-family:Arial,sans-serif;background:#f8fafc;padding:24px;}form{max-width:700px;background:#fff;padding:20px;border:1px solid #e2e8f0;border-radius:12px;}label{display:block;margin-bottom:8px;}select,input,textarea{width:100%;padding:10px;margin-bottom:16px;border:1px solid #cbd5e1;border-radius:10px;}button{padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;border:none;cursor:pointer;}a{color:#2563eb;}</style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8fafc; padding: 24px; }
+        form { max-width: 920px; background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        label { display:block; margin-bottom: 8px; font-weight: 600; }
+        select,input,textarea { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:10px; }
+        textarea { min-height: 90px; }
+        #map { height: 340px; border-radius: 12px; border:1px solid #cbd5e1; margin: 10px 0 18px; }
+        button { padding:12px 18px; border-radius:10px; background:#0f172a; color:#fff; border:none; cursor:pointer; }
+        a { color:#2563eb; }
+        .full { grid-column: 1 / -1; }
+    </style>
 </head>
 <body>
     <h1>Tambah Pelanggan</h1>
 
     @if($errors->any())
-        <div style="margin-bottom:16px;padding:14px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;">
+        <div style="margin-bottom:16px;padding:14px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;max-width:920px;">
             <ul>
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -22,57 +34,126 @@
     <form method="POST" action="{{ route('pelanggan.store') }}">
         @csrf
 
-        <label>Nama</label>
-        <input type="text" name="name" value="{{ old('name') }}" required>
-
-        <label>Email</label>
-        <input type="email" name="email" value="{{ old('email') }}">
-
-        <label>Telepon</label>
-        <input type="text" name="phone" value="{{ old('phone') }}">
-
-        <label>Alamat</label>
-        <textarea name="address">{{ old('address') }}</textarea>
-
-        <label>Kecamatan</label>
-        <select name="kecamatan_id">
-            <option value="">-- Pilih Kecamatan --</option>
-            @foreach($kecamatans as $kecamatan)
-                <option value="{{ $kecamatan->id }}" {{ old('kecamatan_id') == $kecamatan->id ? 'selected' : '' }}>{{ $kecamatan->name }}</option>
-            @endforeach
-        </select>
-
-        <label>Desa</label>
-        <select name="desa_id">
-            <option value="">-- Pilih Desa --</option>
-            @foreach($desas as $desa)
-                <option value="{{ $desa->id }}" {{ old('desa_id') == $desa->id ? 'selected' : '' }}>{{ $desa->name }} ({{ $desa->kecamatan?->name ?? 'Kecamatan' }})</option>
-            @endforeach
-        </select>
-
-        <label>Petugas Lapangan</label>
-        <select name="assigned_petugas_id">
-            <option value="">-- Pilih Petugas --</option>
-            @foreach($petugas as $user)
-                <option value="{{ $user->id }}" {{ old('assigned_petugas_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
-            @endforeach
-        </select>
-
-        <label>Latitude</label>
-        <input type="text" name="latitude" value="{{ old('latitude') }}">
-
-        <label>Longitude</label>
-        <input type="text" name="longitude" value="{{ old('longitude') }}">
-
-        <label>Status</label>
-        <select name="status">
-            <option value="aktif" {{ old('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
-            <option value="nonaktif" {{ old('status') == 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
-        </select>
+        <div class="grid">
+            <div>
+                <label>Kode Pelanggan</label>
+                <input type="text" name="kode_pelanggan" value="{{ old('kode_pelanggan') }}" required>
+            </div>
+            <div>
+                <label>Nama Pelanggan</label>
+                <input type="text" name="name" value="{{ old('name') }}" required>
+            </div>
+            <div>
+                <label>No HP</label>
+                <input type="text" name="phone" value="{{ old('phone') }}">
+            </div>
+            <div>
+                <label>Email (opsional)</label>
+                <input type="email" name="email" value="{{ old('email') }}">
+            </div>
+            <div class="full">
+                <label>Alamat</label>
+                <textarea name="address" required>{{ old('address') }}</textarea>
+            </div>
+            <div>
+                <label>Dusun</label>
+                <input type="text" name="dusun" value="{{ old('dusun') }}" required>
+            </div>
+            <div>
+                <label>Jenis Pelanggan</label>
+                <select name="jenis_pelanggan" required>
+                    <option value="">-- Pilih Jenis --</option>
+                    @foreach(['rumah_tangga' => 'Rumah Tangga', 'niaga' => 'Niaga', 'sosial' => 'Sosial', 'instansi' => 'Instansi'] as $value => $label)
+                        <option value="{{ $value }}" {{ old('jenis_pelanggan') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>Nomor Meter</label>
+                <input type="text" name="nomor_meter" value="{{ old('nomor_meter') }}" required>
+            </div>
+            <div>
+                <label>Status</label>
+                <select name="status" required>
+                    <option value="aktif" {{ old('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                    <option value="nonaktif" {{ old('status') == 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                </select>
+            </div>
+            <div>
+                <label>Kecamatan</label>
+                <select name="kecamatan_id">
+                    <option value="">-- Pilih Kecamatan --</option>
+                    @foreach($kecamatans as $kecamatan)
+                        <option value="{{ $kecamatan->id }}" {{ old('kecamatan_id') == $kecamatan->id ? 'selected' : '' }}>{{ $kecamatan->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>Desa</label>
+                <select name="desa_id" required>
+                    <option value="">-- Pilih Desa --</option>
+                    @foreach($desas as $desa)
+                        <option value="{{ $desa->id }}" {{ old('desa_id') == $desa->id ? 'selected' : '' }}>{{ $desa->name }} ({{ $desa->kecamatan?->name ?? 'Kecamatan' }})</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>Assign ke Petugas</label>
+                <select name="assigned_petugas_id">
+                    <option value="">-- Pilih Petugas --</option>
+                    @foreach($petugas as $user)
+                        <option value="{{ $user->id }}" {{ old('assigned_petugas_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>Latitude</label>
+                <input id="latitude" type="text" name="latitude" value="{{ old('latitude') }}" placeholder="contoh: -6.2000000">
+            </div>
+            <div>
+                <label>Longitude</label>
+                <input id="longitude" type="text" name="longitude" value="{{ old('longitude') }}" placeholder="contoh: 106.8166667">
+            </div>
+            <div class="full">
+                <label>Pilih Titik Pelanggan di Peta (klik pada peta)</label>
+                <div id="map"></div>
+            </div>
+        </div>
 
         <button type="submit">Simpan</button>
     </form>
 
     <p><a href="{{ route('pelanggan.index') }}">Kembali ke Daftar Pelanggan</a></p>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        const initialLat = Number(@json(old('latitude') ?: -2.548926));
+        const initialLng = Number(@json(old('longitude') ?: 118.014863));
+
+        const map = L.map('map').setView([initialLat, initialLng], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        let marker = null;
+        if (!Number.isNaN(initialLat) && !Number.isNaN(initialLng) && (initialLat !== -2.548926 || initialLng !== 118.014863)) {
+            marker = L.marker([initialLat, initialLng]).addTo(map);
+            map.setView([initialLat, initialLng], 15);
+        }
+
+        map.on('click', (event) => {
+            const { lat, lng } = event.latlng;
+
+            document.getElementById('latitude').value = lat.toFixed(7);
+            document.getElementById('longitude').value = lng.toFixed(7);
+
+            if (marker) {
+                marker.setLatLng([lat, lng]);
+            } else {
+                marker = L.marker([lat, lng]).addTo(map);
+            }
+        });
+    </script>
 </body>
 </html>

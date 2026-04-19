@@ -15,11 +15,15 @@ class MeterRecord extends Model
         'meter_previous_month',
         'meter_current_month',
         'recorded_at',
+        'meter_photo_path',
+        'verification_status',
+        'is_anomaly',
         'notes',
     ];
 
     protected $casts = [
         'recorded_at' => 'date',
+        'is_anomaly' => 'boolean',
     ];
 
     public function pelanggan()

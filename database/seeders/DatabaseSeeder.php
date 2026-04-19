@@ -74,17 +74,46 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $kecamatan = \App\Models\Kecamatan::firstOrCreate(['name' => 'Kecamatan Utama']);
-        $desa = \App\Models\Desa::firstOrCreate(['name' => 'Desa Satu', 'kecamatan_id' => $kecamatan->id]);
+        $desa = \App\Models\Desa::firstOrCreate([
+            'name' => 'Desa Satu',
+            'kecamatan_id' => $kecamatan->id,
+        ]);
 
-        $pelanggan = \App\Models\Pelanggan::firstOrCreate([
+        $pelanggan = \App\Models\Pelanggan::updateOrCreate([
             'email' => 'pelanggan1@example.com',
         ], [
+            'kode_pelanggan' => 'PLG-0001',
             'name' => 'Pelanggan Satu',
+            'email' => 'pelanggan1@example.com',
             'phone' => '08123456789',
             'address' => 'Jalan Contoh No.1',
+            'dusun' => 'Dusun Melati',
+            'jenis_pelanggan' => 'rumah_tangga',
+            'nomor_meter' => 'MTR-10001',
             'kecamatan_id' => $kecamatan->id,
             'desa_id' => $desa->id,
             'status' => 'aktif',
+            'latitude' => -6.2000000,
+            'longitude' => 106.8166667,
+            'assigned_petugas_id' => $petugas->id,
+        ]);
+
+        \App\Models\Pelanggan::updateOrCreate([
+            'email' => 'pelanggan2@example.com',
+        ], [
+            'kode_pelanggan' => 'PLG-0002',
+            'name' => 'Pelanggan Dua',
+            'email' => 'pelanggan2@example.com',
+            'phone' => '08139876543',
+            'address' => 'Jalan Contoh No.2',
+            'dusun' => 'Dusun Anggrek',
+            'jenis_pelanggan' => 'niaga',
+            'nomor_meter' => 'MTR-10002',
+            'kecamatan_id' => $kecamatan->id,
+            'desa_id' => $desa->id,
+            'status' => 'nonaktif',
+            'latitude' => -6.2015000,
+            'longitude' => 106.8185000,
             'assigned_petugas_id' => $petugas->id,
         ]);
 

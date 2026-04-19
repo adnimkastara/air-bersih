@@ -10,16 +10,25 @@ class Pelanggan extends Model
     use HasFactory;
 
     protected $fillable = [
+        'kode_pelanggan',
         'name',
         'email',
         'phone',
         'address',
+        'dusun',
+        'jenis_pelanggan',
+        'nomor_meter',
         'kecamatan_id',
         'desa_id',
         'assigned_petugas_id',
         'latitude',
         'longitude',
         'status',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     public function kecamatan()
