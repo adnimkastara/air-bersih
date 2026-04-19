@@ -74,7 +74,10 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $kecamatan = \App\Models\Kecamatan::firstOrCreate(['name' => 'Kecamatan Utama']);
-        $desa = \App\Models\Desa::firstOrCreate(['name' => 'Desa Satu', 'kecamatan_id' => $kecamatan->id]);
+        $desa = \App\Models\Desa::firstOrCreate([
+            'name' => 'Desa Satu',
+            'kecamatan_id' => $kecamatan->id,
+        ]);
 
         $pelanggan = \App\Models\Pelanggan::updateOrCreate([
             'email' => 'pelanggan1@example.com',
