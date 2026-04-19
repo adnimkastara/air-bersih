@@ -9,6 +9,7 @@ use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\MeterRecordController;
 use App\Http\Controllers\TagihanController;
 use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\MonitoringController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -58,5 +59,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/pembayaran/create', [PembayaranController::class, 'create'])->name('pembayaran.create');
         Route::post('/pembayaran', [PembayaranController::class, 'store'])->name('pembayaran.store');
         Route::get('/pembayaran/{pembayaran}/receipt', [PembayaranController::class, 'receipt'])->name('pembayaran.receipt');
+
+        Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
+        Route::post('/monitoring/laporan', [MonitoringController::class, 'store'])->name('monitoring.store');
     });
 });
