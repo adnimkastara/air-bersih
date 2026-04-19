@@ -1,0 +1,51 @@
+<?php
+
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KecamatanController;
+use App\Http\Controllers\DesaController;
+use App\Http\Controllers\PelangganController;
+use App\Http\Controllers\MeterRecordController;
+use App\Http\Controllers\TagihanController;
+use App\Http\Controllers\PembayaranController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/preview', function () {
+    return view('preview');
+})->name('preview');
+
+Route::middleware('guest')->get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::middleware('guest')->post('/login', [AuthController::class, 'login'])->name('login.perform');
+Route::middleware('guest')->get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::middleware('guest')->post('/register', [AuthController::class, 'register'])->name('register.perform');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/kecamatan', [KecamatanController::class, 'index'])->name('kecamatan.index');
+    Route::resource('desa', DesaController::class)->except(['show']);
+    Route::resource('pelanggan', PelangganController::class)->except(['show']);
+
+    Route::get('/meter-records', [MeterRecordController::class, 'index'])->name('meter_records.index');
+    Route::get('/meter-records/create', [MeterRecordController::class, 'create'])->name('meter_records.create');
+    Route::post('/meter-records', [MeterRecordController::class, 'store'])->name('meter_records.store');
+
+    Route::get('/tagihan', [TagihanController::class, 'index'])->name('tagihan.index');
+    Route::post('/tagihan/generate', [TagihanController::class, 'generate'])->name('tagihan.generate');
+    Route::post('/tagihan/{tagihan}/publish', [TagihanController::class, 'publish'])->name('tagihan.publish');
+
+    Route::get('/pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
+    Route::get('/pembayaran/create', [PembayaranController::class, 'create'])->name('pembayaran.create');
+    Route::post('/pembayaran', [PembayaranController::class, 'store'])->name('pembayaran.store');
+    Route::get('/pembayaran/{pembayaran}/receipt', [PembayaranController::class, 'receipt'])->name('pembayaran.receipt');
+
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin');
+    Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
+    Route::put('/admin/users/{user}/role', [AdminController::class, 'updateRole'])->name('admin.users.updateRole');
+});
