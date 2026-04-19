@@ -1,32 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Kecamatan</title>
-    <style>body{font-family:Arial,sans-serif;background:#f8fafc;padding:24px;}form{max-width:600px;background:#fff;padding:20px;border:1px solid #e2e8f0;border-radius:12px;}label{display:block;margin-bottom:8px;}input{width:100%;padding:10px;margin-bottom:16px;border:1px solid #cbd5e1;border-radius:10px;}button{padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;border:none;cursor:pointer;}a{color:#2563eb;}</style>
-</head>
-<body>
-    <h1>Edit Kecamatan</h1>
+@extends('layouts.admin')
 
-    @if($errors->any())
-        <div style="margin-bottom:16px;padding:14px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;">
-            <ul>
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+@section('title', 'Edit Kecamatan')
 
-    <form method="POST" action="{{ route('kecamatan.update', $kecamatan) }}">
-        @csrf
-        @method('PUT')
-        <label>Nama Kecamatan</label>
-        <input type="text" name="name" value="{{ old('name', $kecamatan->name) }}" required>
-        <button type="submit">Perbarui</button>
-    </form>
+@section('content')
+    @include('layouts.partials.page-header', ['title' => 'Edit Kecamatan'])
+    @include('layouts.partials.alerts')
 
-    <p><a href="{{ route('kecamatan.index') }}">Kembali ke Daftar Kecamatan</a></p>
-</body>
-</html>
+    <div class="card" style="max-width:700px;">
+        <form method="POST" action="{{ route('kecamatan.update', $kecamatan) }}">
+            @csrf
+            @method('PUT')
+            <div style="margin-bottom:14px;">
+                <label>Nama Kecamatan</label>
+                <input type="text" name="name" value="{{ old('name', $kecamatan->name) }}" required>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button type="submit" class="btn btn-primary">Perbarui</button>
+                <a href="{{ route('kecamatan.index') }}" class="btn btn-outline">Batal</a>
+            </div>
+        </form>
+    </div>
+@endsection
