@@ -43,7 +43,7 @@
             <button type="submit" class="button">Sign in</button>
         </form>
 
-        <p class="footer">Don't have an account? <a href="{{ route('register') }}">Register</a></p>
+        <p class="footer">Akun dibuat oleh admin sistem. Hubungi root/admin desa untuk pembuatan akun.</p>
     </main>
 </body>
 </html>

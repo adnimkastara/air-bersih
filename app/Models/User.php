@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\ActivityLog;
+use App\Models\Desa;
 use App\Models\MeterRecord;
 use App\Models\Pembayaran;
 use App\Models\Role;
@@ -18,33 +18,20 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'role_id',
+        'desa_id',
+        'petugas_subtype',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -56,6 +43,11 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function desa(): BelongsTo
+    {
+        return $this->belongsTo(Desa::class);
     }
 
     public function meterRecords()
@@ -83,28 +75,52 @@ class User extends Authenticatable
         return in_array($this->role?->name, $roles, true);
     }
 
-    public function isAdminKecamatan(): bool
-    {
-        return $this->hasAnyRole(['admin_kecamatan', 'root']);
-    }
-
     public function isAdminDesa(): bool
     {
-        return $this->hasAnyRole(['admin_desa', 'root']);
+        return $this->hasRole('admin_desa');
     }
 
     public function isPetugasLapangan(): bool
     {
-        return $this->hasAnyRole(['petugas_lapangan', 'root']);
-    }
-
-    public function isAdmin(): bool
-    {
-        return $this->hasAnyRole(['admin', 'admin_kecamatan', 'admin_desa', 'root']);
+        return $this->hasRole('petugas_lapangan');
     }
 
     public function isRoot(): bool
     {
-        return $this->role?->name === 'root';
+        return $this->hasRole('root');
+    }
+
+    public function isPencatatMeter(): bool
+    {
+        return $this->isPetugasLapangan() && $this->petugas_subtype === 'pencatat_meter';
+    }
+
+    public function isPenagihIuran(): bool
+    {
+        return $this->isPetugasLapangan() && $this->petugas_subtype === 'penagih_iuran';
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isRoot() || $this->isAdminDesa();
+    }
+
+    public function canAccessGlobalMaster(): bool
+    {
+        return $this->isRoot();
+    }
+
+    public function canAccessFinancialReport(): bool
+    {
+        return $this->isRoot() || $this->isAdminDesa();
+    }
+
+    public function canAccessVillage(int|string|null $desaId): bool
+    {
+        if ($this->isRoot()) {
+            return true;
+        }
+
+        return (int) $this->desa_id === (int) $desaId;
     }
 }

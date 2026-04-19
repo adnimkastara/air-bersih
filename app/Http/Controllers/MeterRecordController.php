@@ -9,21 +9,34 @@ use Illuminate\Http\Request;
 
 class MeterRecordController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = MeterRecord::with(['pelanggan', 'petugas'])
+            ->orderByDesc('recorded_at')
+            ->orderByDesc('id');
+
+        if (! $request->user()->isRoot()) {
+            $query->whereHas('pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id));
+        }
+
         return view('meter_records.index', [
-            'meterRecords' => MeterRecord::with(['pelanggan', 'petugas'])
-                ->orderByDesc('recorded_at')
-                ->orderByDesc('id')
-                ->paginate(15),
+            'meterRecords' => $query->paginate(15),
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $pelangganQuery = Pelanggan::orderBy('name');
+        $petugasQuery = User::whereHas('role', fn ($query) => $query->where('name', 'petugas_lapangan'))->orderBy('name');
+
+        if (! $request->user()->isRoot()) {
+            $pelangganQuery->where('desa_id', $request->user()->desa_id);
+            $petugasQuery->where('desa_id', $request->user()->desa_id);
+        }
+
         return view('meter_records.create', [
-            'pelanggans' => Pelanggan::orderBy('name')->get(),
-            'petugas' => User::whereHas('role', fn ($query) => $query->where('name', 'petugas_lapangan'))->orderBy('name')->get(),
+            'pelanggans' => $pelangganQuery->get(),
+            'petugas' => $petugasQuery->get(),
         ]);
     }
 
@@ -39,6 +52,13 @@ class MeterRecordController extends Controller
             'verification_status' => ['required', 'in:pending,terverifikasi,ditolak'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        $pelanggan = Pelanggan::findOrFail($data['pelanggan_id']);
+        $this->abortUnlessCanAccessDesa($request, $pelanggan->desa_id);
+
+        if ($request->user()->hasRole('petugas_lapangan')) {
+            $data['petugas_id'] = $request->user()->id;
+        }
 
         $lastRecord = MeterRecord::where('pelanggan_id', $data['pelanggan_id'])
             ->orderByDesc('recorded_at')
