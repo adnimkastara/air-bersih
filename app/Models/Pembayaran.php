@@ -12,8 +12,10 @@ class Pembayaran extends Model
     protected $fillable = [
         'tagihan_id',
         'petugas_id',
+        'payment_method',
         'amount',
         'paid_at',
+        'proof_path',
         'notes',
     ];
 

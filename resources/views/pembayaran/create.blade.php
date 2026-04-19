@@ -19,7 +19,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('pembayaran.store') }}">
+    <form method="POST" action="{{ route('pembayaran.store') }}" enctype="multipart/form-data">
         @csrf
 
         <label>Pilih Tagihan</label>
@@ -32,11 +32,22 @@
             @endforeach
         </select>
 
-        <label>Jumlah Pembayaran</label>
-        <input type="number" name="amount" value="{{ old('amount') }}" step="0.01" required>
+        <label>Metode Pembayaran</label>
+        <select name="payment_method" required>
+            <option value="">-- Pilih Metode --</option>
+            @foreach($paymentMethods as $method)
+                <option value="{{ $method }}" {{ old('payment_method') === $method ? 'selected' : '' }}>{{ str($method)->replace('_', ' ')->title() }}</option>
+            @endforeach
+        </select>
+
+        <label>Nominal</label>
+        <input type="number" name="amount" value="{{ old('amount') }}" step="0.01" min="0" required>
 
         <label>Tanggal Bayar</label>
         <input type="date" name="paid_at" value="{{ old('paid_at', date('Y-m-d')) }}" required>
+
+        <label>Bukti Bayar (opsional)</label>
+        <input type="file" name="proof" accept=".jpg,.jpeg,.png,.webp">
 
         <label>Catatan</label>
         <textarea name="notes">{{ old('notes') }}</textarea>
