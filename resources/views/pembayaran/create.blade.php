@@ -1,60 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Pembayaran</title>
-    <style>body{font-family:Arial,sans-serif;background:#f8fafc;padding:24px;}form{max-width:700px;background:#fff;padding:20px;border:1px solid #e2e8f0;border-radius:12px;}label{display:block;margin-bottom:8px;}select,input,textarea{width:100%;padding:10px;margin-bottom:16px;border:1px solid #cbd5e1;border-radius:10px;}button{padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;border:none;cursor:pointer;}a{color:#2563eb;}</style>
-</head>
-<body>
-    <h1>Catat Pembayaran</h1>
-
-    @if($errors->any())
-        <div style="margin-bottom:16px;padding:14px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;">
-            <ul>
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    <form method="POST" action="{{ route('pembayaran.store') }}" enctype="multipart/form-data">
-        @csrf
-
-        <label>Pilih Tagihan</label>
-        <select name="tagihan_id" required>
-            <option value="">-- Pilih Tagihan --</option>
-            @foreach($tagihans as $tagihan)
-                <option value="{{ $tagihan->id }}" {{ old('tagihan_id') == $tagihan->id ? 'selected' : '' }}>
-                    #{{ $tagihan->id }} - {{ $tagihan->pelanggan?->name ?? 'Pelanggan' }} - Rp {{ number_format($tagihan->amount, 0, ',', '.') }} - {{ ucfirst($tagihan->status) }}
-                </option>
-            @endforeach
-        </select>
-
-        <label>Metode Pembayaran</label>
-        <select name="payment_method" required>
-            <option value="">-- Pilih Metode --</option>
-            @foreach($paymentMethods as $method)
-                <option value="{{ $method }}" {{ old('payment_method') === $method ? 'selected' : '' }}>{{ str($method)->replace('_', ' ')->title() }}</option>
-            @endforeach
-        </select>
-
-        <label>Nominal</label>
-        <input type="number" name="amount" value="{{ old('amount') }}" step="0.01" min="0" required>
-
-        <label>Tanggal Bayar</label>
-        <input type="date" name="paid_at" value="{{ old('paid_at', date('Y-m-d')) }}" required>
-
-        <label>Bukti Bayar (opsional)</label>
-        <input type="file" name="proof" accept=".jpg,.jpeg,.png,.webp">
-
-        <label>Catatan</label>
-        <textarea name="notes">{{ old('notes') }}</textarea>
-
-        <button type="submit">Simpan Pembayaran</button>
-    </form>
-
-    <p><a href="{{ route('pembayaran.index') }}">Kembali ke Daftar Pembayaran</a></p>
-</body>
-</html>
+@extends('layouts.admin')
+@section('title', 'Tambah Pembayaran')
+@section('content')
+@include('layouts.partials.page-header', ['title' => 'Catat Pembayaran'])
+@include('layouts.partials.alerts')
+<div class="card" style="max-width:760px;">
+<form method="POST" action="{{ route('pembayaran.store') }}" enctype="multipart/form-data">
+@csrf
+<div style="margin-bottom:14px;"><label>Pilih Tagihan</label><select name="tagihan_id" required><option value="">-- Pilih Tagihan --</option>@foreach($tagihans as $tagihan)<option value="{{ $tagihan->id }}" @selected(old('tagihan_id') == $tagihan->id)>#{{ $tagihan->id }} - {{ $tagihan->pelanggan?->name ?? 'Pelanggan' }} - Rp {{ number_format($tagihan->amount, 0, ',', '.') }} - {{ ucfirst($tagihan->status) }}</option>@endforeach</select></div>
+<div style="margin-bottom:14px;"><label>Metode Pembayaran</label><select name="payment_method" required><option value="">-- Pilih --</option>@foreach($paymentMethods as $method)<option value="{{ $method }}" @selected(old('payment_method') === $method)>{{ str($method)->replace('_', ' ')->title() }}</option>@endforeach</select></div>
+<div style="margin-bottom:14px;"><label>Nominal</label><input type="number" name="amount" value="{{ old('amount') }}" step="0.01" min="0" required></div>
+<div style="margin-bottom:14px;"><label>Tanggal Bayar</label><input type="date" name="paid_at" value="{{ old('paid_at', date('Y-m-d')) }}" required></div>
+<div style="margin-bottom:14px;"><label>Bukti Bayar (opsional)</label><input type="file" name="proof" accept=".jpg,.jpeg,.png,.webp"></div>
+<div style="margin-bottom:14px;"><label>Catatan</label><textarea name="notes">{{ old('notes') }}</textarea></div>
+<div style="display:flex;gap:8px;"><button class="btn btn-primary" type="submit">Simpan Pembayaran</button><a href="{{ route('pembayaran.index') }}" class="btn btn-outline">Batal</a></div>
+</form>
+</div>
+@endsection

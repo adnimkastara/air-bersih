@@ -1,27 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Kecamatan</title>
-    <style>body{font-family:Arial,sans-serif;background:#f8fafc;padding:24px;}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;}th,td{padding:12px;border-bottom:1px solid #e2e8f0;}th{background:#f1f5f9;text-align:left;}a{padding:10px 14px;border-radius:8px;text-decoration:none;color:#2563eb;}</style>
-</head>
-<body>
-    <h1>Daftar Kecamatan</h1>
+@extends('layouts.admin')
 
-    <table>
-        <thead>
-            <tr><th>Nama Kecamatan</th></tr>
-        </thead>
-        <tbody>
-            @foreach($kecamatans as $kecamatan)
+@section('title', 'Daftar Kecamatan')
+
+@section('content')
+    @include('layouts.partials.page-header', [
+        'title' => 'Daftar Kecamatan',
+        'subtitle' => 'Master data kecamatan untuk administrasi wilayah.',
+        'actions' => Route::has('kecamatan.create') ? '<a class="btn btn-primary" href="'.route('kecamatan.create').'"><i class="bi bi-plus-lg"></i> Tambah Kecamatan</a>' : null
+    ])
+
+    @include('layouts.partials.alerts')
+
+    <div class="card table-wrap">
+        <table>
+            <thead><tr><th>Nama Kecamatan</th><th style="width:140px;">Aksi</th></tr></thead>
+            <tbody>
+            @forelse($kecamatans as $kecamatan)
                 <tr>
                     <td>{{ $kecamatan->name }}</td>
+                    <td>@if(Route::has('kecamatan.edit'))<a href="{{ route('kecamatan.edit', $kecamatan) }}" class="btn btn-outline btn-sm">Edit</a>@else-@endif</td>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <p><a href="{{ route('dashboard') }}">Kembali ke Dashboard</a></p>
-</body>
-</html>
+            @empty
+                <tr><td colspan="2">@include('layouts.partials.empty-state', ['message' => 'Belum ada data kecamatan.'])</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+@endsection
