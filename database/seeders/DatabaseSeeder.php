@@ -34,6 +34,14 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::firstOrCreate([
+            'email' => 'admin@airbersih.com',
+        ], [
+            'name' => 'System Admin',
+            'password' => Hash::make('Admin1234!'),
+            'role_id' => $adminRole->id,
+        ]);
+
+        User::firstOrCreate([
             'email' => 'kecamatan@airbersih.com',
         ], [
             'name' => 'Admin Kecamatan',
@@ -49,7 +57,7 @@ class DatabaseSeeder extends Seeder
             'role_id' => $adminDesaRole->id,
         ]);
 
-        User::firstOrCreate([
+        $petugas = User::firstOrCreate([
             'email' => 'petugas@airbersih.com',
         ], [
             'name' => 'Petugas Lapangan',
@@ -57,10 +65,18 @@ class DatabaseSeeder extends Seeder
             'role_id' => $petugasRole->id,
         ]);
 
+        User::firstOrCreate([
+            'email' => 'user@airbersih.com',
+        ], [
+            'name' => 'User Umum',
+            'password' => Hash::make('User12345!'),
+            'role_id' => $userRole->id,
+        ]);
+
         $kecamatan = \App\Models\Kecamatan::firstOrCreate(['name' => 'Kecamatan Utama']);
         $desa = \App\Models\Desa::firstOrCreate(['name' => 'Desa Satu', 'kecamatan_id' => $kecamatan->id]);
 
-        \App\Models\Pelanggan::firstOrCreate([
+        $pelanggan = \App\Models\Pelanggan::firstOrCreate([
             'email' => 'pelanggan1@example.com',
         ], [
             'name' => 'Pelanggan Satu',
@@ -69,18 +85,55 @@ class DatabaseSeeder extends Seeder
             'kecamatan_id' => $kecamatan->id,
             'desa_id' => $desa->id,
             'status' => 'aktif',
-            'assigned_petugas_id' => User::where('email', 'petugas@airbersih.com')->first()->id,
+            'assigned_petugas_id' => $petugas->id,
         ]);
 
-        $pelanggan = \App\Models\Pelanggan::first();
-        \App\Models\MeterRecord::firstOrCreate([
+        $meterRecord = \App\Models\MeterRecord::firstOrCreate([
             'pelanggan_id' => $pelanggan->id,
-            'recorded_at' => Carbon::now(),
+            'recorded_at' => Carbon::now()->startOfMonth(),
         ], [
-            'petugas_id' => User::where('email', 'petugas@airbersih.com')->first()->id,
+            'petugas_id' => $petugas->id,
             'meter_previous_month' => 100,
             'meter_current_month' => 150,
             'notes' => 'Catatan contoh',
+        ]);
+
+        $tagihanTerbit = \App\Models\Tagihan::firstOrCreate([
+            'pelanggan_id' => $pelanggan->id,
+            'period' => Carbon::now()->format('Y-m'),
+        ], [
+            'meter_record_id' => $meterRecord->id,
+            'amount' => 75000,
+            'status' => 'terbit',
+            'due_date' => Carbon::now()->addDays(10)->toDateString(),
+        ]);
+
+        \App\Models\Tagihan::firstOrCreate([
+            'pelanggan_id' => $pelanggan->id,
+            'period' => Carbon::now()->subMonth()->format('Y-m'),
+        ], [
+            'meter_record_id' => $meterRecord->id,
+            'amount' => 68000,
+            'status' => 'menunggak',
+            'due_date' => Carbon::now()->subDays(7)->toDateString(),
+        ]);
+
+        \App\Models\Pembayaran::firstOrCreate([
+            'tagihan_id' => $tagihanTerbit->id,
+            'paid_at' => Carbon::now()->toDateString(),
+        ], [
+            'petugas_id' => $petugas->id,
+            'amount' => 75000,
+            'notes' => 'Pembayaran contoh lunas di loket desa.',
+        ]);
+
+        \App\Models\ActivityLog::firstOrCreate([
+            'action' => 'gangguan_pipa',
+            'subject_type' => 'pelanggan',
+            'subject_id' => $pelanggan->id,
+        ], [
+            'user_id' => $petugas->id,
+            'description' => 'Laporan gangguan aliran air di RT 01.',
         ]);
     }
 }
