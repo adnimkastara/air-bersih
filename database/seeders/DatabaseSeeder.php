@@ -76,7 +76,7 @@ class DatabaseSeeder extends Seeder
         $kecamatan = \App\Models\Kecamatan::firstOrCreate(['name' => 'Kecamatan Utama']);
         $desa = \App\Models\Desa::firstOrCreate(['name' => 'Desa Satu', 'kecamatan_id' => $kecamatan->id]);
 
-        $pelanggan = \App\Models\Pelanggan::firstOrCreate([
+        $pelanggan = \App\Models\Pelanggan::updateOrCreate([
             'kode_pelanggan' => 'PLG-0001',
         ], [
             'name' => 'Pelanggan Satu',
@@ -94,7 +94,7 @@ class DatabaseSeeder extends Seeder
             'assigned_petugas_id' => $petugas->id,
         ]);
 
-        \App\Models\Pelanggan::firstOrCreate([
+        \App\Models\Pelanggan::updateOrCreate([
             'kode_pelanggan' => 'PLG-0002',
         ], [
             'name' => 'Pelanggan Dua',
