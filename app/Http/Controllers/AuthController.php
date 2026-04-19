@@ -19,14 +19,14 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::attempt(array_merge($credentials, ['is_active' => true]), $request->boolean('remember'))) {
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'));
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password tidak sesuai.',
+            'email' => 'Email/password tidak sesuai atau akun nonaktif.',
         ])->onlyInput('email');
     }
 

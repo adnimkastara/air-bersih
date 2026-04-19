@@ -510,8 +510,8 @@
         <div class="brand">
             <div class="brand-logo">💧</div>
             <div>
-                <h1>Air Bersih Desa</h1>
-                <p>Sistem Pengelolaan Cerdas</p>
+                <h1>{{ $namaUnitPengelola ?: 'Air Bersih Desa' }}</h1>
+                <p>{{ $namaKecamatan ? 'Kecamatan '.$namaKecamatan : 'Sistem Pengelolaan Cerdas' }}</p>
             </div>
         </div>
 
@@ -549,7 +549,7 @@
         <header class="topbar">
             <div>
                 <h2>{{ $dashboardTitle }}</h2>
-                <small style="color: var(--text-soft);">Panel kontrol layanan air bersih desa yang profesional & terpercaya.</small>
+                <small style="color: var(--text-soft);">{{ $namaUnitPengelola ? 'Identitas pengelola aktif: '.$namaUnitPengelola : 'Panel kontrol layanan air bersih desa yang profesional & terpercaya.' }}</small>
             </div>
 
             <label class="search">

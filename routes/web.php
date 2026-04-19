@@ -12,7 +12,8 @@ use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TagihanController;
-use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\Settings\AppSettingController;
+use App\Http\Controllers\Settings\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -43,11 +44,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin', [AdminController::class, 'index'])->name('admin');
     });
 
-    Route::middleware('role:root,admin_desa')->group(function () {
-        Route::get('/user-management', [UserManagementController::class, 'index'])->name('users.index');
-        Route::post('/user-management', [UserManagementController::class, 'store'])->name('users.store');
-        Route::put('/user-management/{user}', [UserManagementController::class, 'update'])->name('users.update');
-        Route::put('/user-management/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.reset-password');
+    Route::prefix('settings')->name('settings.')->middleware('role:root,admin_desa')->group(function () {
+        Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserManagementController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
+        Route::put('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.reset-password');
+
+        Route::get('/app', [AppSettingController::class, 'edit'])->name('app.edit');
+        Route::put('/app', [AppSettingController::class, 'update'])->name('app.update');
     });
 
     Route::middleware('role:root,admin_desa')->group(function () {
