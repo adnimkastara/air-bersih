@@ -25,6 +25,7 @@ class DashboardController extends Controller
                     ['label' => 'Data Pelanggan', 'route' => 'pelanggan.index'],
                     ['label' => 'Tagihan', 'route' => 'tagihan.index'],
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
+                    ['label' => 'Monitoring Map', 'route' => 'monitoring.index'],
                     ['label' => 'Manajemen Role', 'route' => 'admin.users'],
                 ],
             ],
@@ -36,6 +37,7 @@ class DashboardController extends Controller
                     ['label' => 'Data Pelanggan', 'route' => 'pelanggan.index'],
                     ['label' => 'Tagihan', 'route' => 'tagihan.index'],
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
+                    ['label' => 'Monitoring Map', 'route' => 'monitoring.index'],
                 ],
             ],
             'petugas_lapangan' => [
@@ -46,6 +48,7 @@ class DashboardController extends Controller
                     ['label' => 'Input Meter', 'route' => 'meter_records.create'],
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
                     ['label' => 'Input Pembayaran', 'route' => 'pembayaran.create'],
+                    ['label' => 'Monitoring Map', 'route' => 'monitoring.index'],
                 ],
             ],
             default => [
@@ -58,6 +61,7 @@ class DashboardController extends Controller
                     ['label' => 'Pencatatan Meter', 'route' => 'meter_records.index'],
                     ['label' => 'Tagihan', 'route' => 'tagihan.index'],
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
+                    ['label' => 'Monitoring Map', 'route' => 'monitoring.index'],
                 ],
             ],
         };

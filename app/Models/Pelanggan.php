@@ -52,6 +52,11 @@ class Pelanggan extends Model
     }
 
 
+    public function laporanGangguans()
+    {
+        return $this->hasMany(LaporanGangguan::class);
+    }
+
     public function activeTarif()
     {
         return Tarif::query()
