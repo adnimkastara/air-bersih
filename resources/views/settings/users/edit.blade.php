@@ -20,10 +20,20 @@
 
                 <div><label>Role</label><input type="text" value="{{ $user->role?->name }}" disabled></div>
 
-                @if($actor->isRoot())
+                @if($actor->isKecamatanLevel())
+                    <div>
+                        <label>Kecamatan</label>
+                        <select name="kecamatan_id">
+                            <option value="">-- Pilih Kecamatan --</option>
+                            @foreach($kecamatans as $kecamatan)
+                                <option value="{{ $kecamatan->id }}" @selected((string) old('kecamatan_id', $user->kecamatan_id) === (string) $kecamatan->id)>{{ $kecamatan->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div>
                         <label>Desa</label>
-                        <select name="desa_id" required>
+                        <select name="desa_id">
+                            <option value="">-- Pilih Desa --</option>
                             @foreach($desas as $desa)
                                 <option value="{{ $desa->id }}" @selected((string) old('desa_id', $user->desa_id) === (string) $desa->id)>{{ $desa->name }}</option>
                             @endforeach

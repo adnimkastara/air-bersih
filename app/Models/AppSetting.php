@@ -64,7 +64,7 @@ class AppSetting extends Model
 
     public static function resolveForUser(User $user): ?self
     {
-        if ($user->isRoot()) {
+        if ($user->isKecamatanLevel()) {
             return self::where('scope_key', self::scopeKeyForGlobal())->first();
         }
 

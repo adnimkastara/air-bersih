@@ -11,6 +11,13 @@ class Kecamatan extends Model
 
     protected $fillable = [
         'name',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     public function desas()

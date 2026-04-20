@@ -690,27 +690,17 @@
             <article id="keluhan" class="panel">
                 <h4>Notifikasi & Aktivitas Keluhan Terbaru</h4>
                 <div class="complaint-list">
-                    <div class="item">
-                        <div>
-                            <strong style="font-size:.88rem;">Tekanan Air Menurun - Dusun 2</strong>
-                            <div style="font-size:.78rem; color:var(--text-soft);">Dilaporkan 45 menit lalu</div>
+                    @forelse(($recentKeluhan ?? []) as $keluhan)
+                        <div class="item">
+                            <div>
+                                <strong style="font-size:.88rem;">{{ $keluhan->judul }}</strong>
+                                <div style="font-size:.78rem; color:var(--text-soft);">Dilaporkan {{ optional($keluhan->reported_at)->diffForHumans() ?? '-' }}</div>
+                            </div>
+                            <span class="badge {{ $keluhan->status_penanganan === 'selesai' ? '' : 'warn' }}">{{ ucfirst($keluhan->status_penanganan) }}</span>
                         </div>
-                        <span class="badge warn">Diproses</span>
-                    </div>
-                    <div class="item">
-                        <div>
-                            <strong style="font-size:.88rem;">Kebocoran Pipa - RT 04</strong>
-                            <div style="font-size:.78rem; color:var(--text-soft);">Dilaporkan 2 jam lalu</div>
-                        </div>
-                        <span class="badge">Selesai</span>
-                    </div>
-                    <div class="item">
-                        <div>
-                            <strong style="font-size:.88rem;">Meter Sulit Terbaca - RT 01</strong>
-                            <div style="font-size:.78rem; color:var(--text-soft);">Dilaporkan hari ini</div>
-                        </div>
-                        <span class="badge warn">Verifikasi</span>
-                    </div>
+                    @empty
+                        <div class="item"><div style="font-size:.85rem;color:var(--text-soft);">Belum ada aktivitas keluhan terbaru.</div></div>
+                    @endforelse
                 </div>
             </article>
         </section>

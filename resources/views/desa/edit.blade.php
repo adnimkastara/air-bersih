@@ -22,6 +22,12 @@
             </div>
 
             <div style="margin-bottom:14px;">
+                <label>Kode Desa</label>
+                <input type="text" name="kode_desa" value="{{ old('kode_desa', $desa->kode_desa) }}" required>
+                <small style="color:var(--muted);">Kode bisnis desa (unik per kecamatan).</small>
+            </div>
+
+            <div style="margin-bottom:14px;">
                 <label>Nama Desa</label>
                 <input type="text" name="name" value="{{ old('name', $desa->name) }}" required>
             </div>

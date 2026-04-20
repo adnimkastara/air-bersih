@@ -5,7 +5,7 @@
 @section('content')
     @include('layouts.partials.page-header', [
         'title' => 'Manajemen User',
-        'subtitle' => $actor->isRoot() ? 'Kelola akun admin desa (dan pantau petugas lintas desa).' : 'Kelola akun petugas lapangan untuk desa Anda.',
+        'subtitle' => $actor->isKecamatanLevel() ? 'Kelola akun admin kecamatan, admin desa, dan petugas lapangan.' : 'Kelola akun petugas lapangan untuk desa Anda.',
         'actions' => '<a href="'.route('settings.users.create').'" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tambah User</a>'
     ])
     @include('layouts.partials.alerts')
@@ -31,6 +31,7 @@
                     <th>Email</th>
                     <th>Role</th>
                     <th>Desa</th>
+                    <th>Kecamatan</th>
                     <th>Subtype</th>
                     <th>Status</th>
                     <th>Aksi</th>
@@ -43,6 +44,7 @@
                     <td>{{ $managedUser->email }}</td>
                     <td>{{ str($managedUser->role?->name)->replace('_', ' ')->title() }}</td>
                     <td>{{ $managedUser->desa?->name ?? '-' }}</td>
+                    <td>{{ $managedUser->kecamatan?->name ?? '-' }}</td>
                     <td>{{ $managedUser->petugas_subtype ? str($managedUser->petugas_subtype)->replace('_', ' ')->title() : '-' }}</td>
                     <td>
                         <span class="badge {{ $managedUser->is_active ? 'badge-success' : 'badge-danger' }}">{{ $managedUser->is_active ? 'Aktif' : 'Nonaktif' }}</span>
@@ -59,7 +61,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7">@include('layouts.partials.empty-state', ['message' => 'Belum ada user yang sesuai filter.'])</td></tr>
+                <tr><td colspan="8">@include('layouts.partials.empty-state', ['message' => 'Belum ada user yang sesuai filter.'])</td></tr>
             @endforelse
             </tbody>
         </table>

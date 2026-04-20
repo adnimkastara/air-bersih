@@ -18,8 +18,8 @@ class UpdateManagedUserRequest extends FormRequest
             return false;
         }
 
-        if ($actor->isRoot()) {
-            return $target->hasRole('admin_desa');
+        if ($actor->isKecamatanLevel()) {
+            return $target->hasAnyRole(['admin_kecamatan', 'admin_desa', 'petugas_lapangan']);
         }
 
         return $target->hasRole('petugas_lapangan') && (int) $target->desa_id === (int) $actor->desa_id;
@@ -33,7 +33,10 @@ class UpdateManagedUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($target->id)],
-            'desa_id' => $this->user()?->isRoot()
+            'kecamatan_id' => $this->user()?->isKecamatanLevel()
+                ? ['nullable', 'integer', 'exists:kecamatans,id']
+                : ['nullable'],
+            'desa_id' => $this->user()?->isKecamatanLevel() && $target->hasAnyRole(['admin_desa', 'petugas_lapangan'])
                 ? ['required', 'integer', 'exists:desas,id']
                 : ['nullable', Rule::in([(int) $this->user()?->desa_id])],
             'petugas_subtype' => ['nullable', Rule::in(['pencatat_meter', 'penagih_iuran'])],
@@ -43,7 +46,7 @@ class UpdateManagedUserRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (! $this->user()?->isRoot()) {
+        if (! $this->user()?->isKecamatanLevel()) {
             $this->merge([
                 'desa_id' => $this->user()?->desa_id,
             ]);

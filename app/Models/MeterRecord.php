@@ -15,6 +15,9 @@ class MeterRecord extends Model
         'meter_previous_month',
         'meter_current_month',
         'recorded_at',
+        'gps_latitude',
+        'gps_longitude',
+        'gps_recorded_at',
         'meter_photo_path',
         'verification_status',
         'is_anomaly',
@@ -23,6 +26,9 @@ class MeterRecord extends Model
 
     protected $casts = [
         'recorded_at' => 'date',
+        'gps_recorded_at' => 'datetime',
+        'gps_latitude' => 'decimal:7',
+        'gps_longitude' => 'decimal:7',
         'is_anomaly' => 'boolean',
     ];
 

@@ -8,7 +8,7 @@ class UpdateAppSettingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->hasAnyRole(['root', 'admin_desa']);
+        return (bool) $this->user()?->hasAnyRole(['root', 'admin_kecamatan', 'admin_desa']);
     }
 
     public function rules(): array

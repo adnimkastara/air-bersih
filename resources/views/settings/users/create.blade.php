@@ -5,7 +5,7 @@
 @section('content')
     @include('layouts.partials.page-header', [
         'title' => 'Tambah User',
-        'subtitle' => $actor->isRoot() ? 'Root hanya dapat membuat akun admin desa.' : 'Admin desa hanya dapat membuat petugas lapangan untuk desanya sendiri.'
+        'subtitle' => $actor->isKecamatanLevel() ? 'Akun level kecamatan dapat membuat admin kecamatan/admin desa/petugas lapangan.' : 'Admin desa hanya dapat membuat petugas lapangan untuk desanya sendiri.'
     ])
     @include('layouts.partials.alerts')
 
@@ -17,13 +17,31 @@
 
             <div>
                 <label>Role</label>
-                <input type="text" value="{{ $actor->isRoot() ? 'admin_desa' : 'petugas_lapangan' }}" disabled>
+                @if($actor->isKecamatanLevel())
+                    <select name="role_name" required>
+                        <option value="admin_kecamatan" @selected(old('role_name') === 'admin_kecamatan')>admin_kecamatan</option>
+                        <option value="admin_desa" @selected(old('role_name', 'admin_desa') === 'admin_desa')>admin_desa</option>
+                        <option value="petugas_lapangan" @selected(old('role_name') === 'petugas_lapangan')>petugas_lapangan</option>
+                    </select>
+                @else
+                    <input type="text" value="petugas_lapangan" disabled>
+                    <input type="hidden" name="role_name" value="petugas_lapangan">
+                @endif
             </div>
 
-            @if($actor->isRoot())
+            @if($actor->isKecamatanLevel())
+                <div>
+                    <label>Kecamatan</label>
+                    <select name="kecamatan_id">
+                        <option value="">-- Pilih Kecamatan --</option>
+                        @foreach($kecamatans as $kecamatan)
+                            <option value="{{ $kecamatan->id }}" @selected((string) old('kecamatan_id', $actor->kecamatan_id) === (string) $kecamatan->id)>{{ $kecamatan->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div>
                     <label>Desa</label>
-                    <select name="desa_id" required>
+                    <select name="desa_id">
                         <option value="">-- Pilih Desa --</option>
                         @foreach($desas as $desa)
                             <option value="{{ $desa->id }}" @selected((string) old('desa_id') === (string) $desa->id)>{{ $desa->name }}</option>

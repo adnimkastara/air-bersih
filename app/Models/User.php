@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\ActivityLog;
 use App\Models\Desa;
+use App\Models\Kecamatan;
 use App\Models\MeterRecord;
 use App\Models\Pembayaran;
 use App\Models\Role;
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'password',
         'role_id',
         'desa_id',
+        'kecamatan_id',
         'petugas_subtype',
         'is_active',
     ];
@@ -50,6 +52,11 @@ class User extends Authenticatable
     public function desa(): BelongsTo
     {
         return $this->belongsTo(Desa::class);
+    }
+
+    public function kecamatan(): BelongsTo
+    {
+        return $this->belongsTo(Kecamatan::class);
     }
 
     public function meterRecords()
@@ -92,6 +99,16 @@ class User extends Authenticatable
         return $this->hasRole('root');
     }
 
+    public function isAdminKecamatan(): bool
+    {
+        return $this->hasRole('admin_kecamatan');
+    }
+
+    public function isKecamatanLevel(): bool
+    {
+        return $this->isRoot() || $this->isAdminKecamatan();
+    }
+
     public function isPencatatMeter(): bool
     {
         return $this->isPetugasLapangan() && $this->petugas_subtype === 'pencatat_meter';
@@ -104,12 +121,12 @@ class User extends Authenticatable
 
     public function canManageUsers(): bool
     {
-        return $this->isRoot() || $this->isAdminDesa();
+        return $this->isRoot() || $this->isAdminKecamatan() || $this->isAdminDesa();
     }
 
     public function canAccessGlobalMaster(): bool
     {
-        return $this->isRoot();
+        return $this->isKecamatanLevel();
     }
 
     public function canAccessFinancialReport(): bool

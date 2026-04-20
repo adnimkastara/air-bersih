@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Models\AppSetting;
 use App\Models\Desa;
 use App\Models\DistrictBilling;
+use App\Models\LaporanGangguan;
 use App\Models\MeterRecord;
 use App\Models\Pelanggan;
 use App\Models\Pembayaran;
@@ -40,6 +40,18 @@ class DashboardController extends Controller
                     ['label' => 'Monitoring', 'route' => 'monitoring.index'],
                 ],
             ],
+            'admin_kecamatan' => [
+                'Dashboard Admin Kecamatan',
+                'Ringkasan lintas desa untuk operasional level kecamatan.',
+                [
+                    ['label' => 'Master Kecamatan', 'route' => 'kecamatan.index'],
+                    ['label' => 'Master Desa', 'route' => 'desa.index'],
+                    ['label' => 'Tagihan Kecamatan', 'route' => 'district-billings.index'],
+                    ['label' => 'Pembayaran Kecamatan', 'route' => 'district-billings.payments'],
+                    ['label' => 'Laporan Kecamatan', 'route' => 'laporan.index'],
+                    ['label' => 'User Management', 'route' => 'settings.users.index'],
+                ],
+            ],
             default => [
                 'Dashboard Kecamatan (Root)',
                 'Ringkasan lintas desa berbasis agregasi per desa. Tidak menampilkan pelanggan rumah tangga sebagai unit utama.',
@@ -58,7 +70,7 @@ class DashboardController extends Controller
         $namaUnitPengelola = $identitySetting?->nama_unit_pengelola;
         $namaKecamatan = $identitySetting?->nama_kecamatan;
 
-        if ($user->isRoot()) {
+        if ($user->isKecamatanLevel()) {
             return $this->buildKecamatanDashboard($user, $dashboardTitle, $dashboardDescription, $shortcuts, $namaUnitPengelola, $namaKecamatan);
         }
 
@@ -111,6 +123,11 @@ class DashboardController extends Controller
             ];
         });
         $districtBillings = DistrictBilling::query()->where('period', $period)->get();
+        $keluhanQuery = LaporanGangguan::query()->latest('reported_at')->latest('id');
+        if ($user->kecamatan_id) {
+            $keluhanQuery->where('kecamatan_id', $user->kecamatan_id);
+        }
+        $recentKeluhan = $keluhanQuery->limit(5)->get();
 
         return view('dashboard', [
             'user' => $user,
@@ -128,7 +145,10 @@ class DashboardController extends Controller
             'totalTagihan' => (float) $districtBillings->sum('total_setoran'),
             'totalPembayaran' => (float) $districtBillings->sum('paid_amount'),
             'totalTunggakan' => (float) ($districtBillings->sum('total_setoran') - $districtBillings->sum('paid_amount')),
-            'totalGangguan' => ActivityLog::where('action', 'like', '%gangguan%')->count(),
+            'totalGangguan' => LaporanGangguan::whereIn('status_penanganan', ['baru', 'diproses'])
+                ->when($user->kecamatan_id, fn ($q) => $q->where('kecamatan_id', $user->kecamatan_id))
+                ->count(),
+            'recentKeluhan' => $recentKeluhan,
             'villageSummaries' => $villageSummaries,
             'chartData' => $villageSummaries->take(6)->map(fn ($item) => ['label' => str($item['desa'])->limit(10, ''), 'value' => min(100, max(10, (int) round($item['total_tagihan_kecamatan'] > 0 ? ($item['total_pembayaran_kecamatan'] / $item['total_tagihan_kecamatan']) * 100 : 10)))])->values()->all(),
         ]);
@@ -139,12 +159,6 @@ class DashboardController extends Controller
         $pelangganQuery = Pelanggan::query()->where('desa_id', $user->desa_id);
         $tagihanQuery = Tagihan::query()->whereHas('pelanggan', fn ($query) => $query->where('desa_id', $user->desa_id));
         $pembayaranQuery = Pembayaran::query()->whereHas('tagihan.pelanggan', fn ($query) => $query->where('desa_id', $user->desa_id));
-        $gangguanQuery = ActivityLog::where(function ($query) {
-            $query->where('action', 'like', '%gangguan%')
-                ->orWhere('description', 'like', '%gangguan%')
-                ->orWhere('action', 'like', '%anomali%');
-        })->whereHas('user', fn ($query) => $query->where('desa_id', $user->desa_id));
-
         return view('dashboard', [
             'user' => $user,
             'role' => $user->role,
@@ -155,7 +169,11 @@ class DashboardController extends Controller
             'totalTagihan' => (float) $tagihanQuery->sum('amount'),
             'totalPembayaran' => (float) $pembayaranQuery->sum('amount'),
             'totalTunggakan' => (float) (clone $tagihanQuery)->where('status', 'menunggak')->sum('amount'),
-            'totalGangguan' => $gangguanQuery->count(),
+            'totalGangguan' => LaporanGangguan::query()
+                ->where('desa_id', $user->desa_id)
+                ->whereIn('status_penanganan', ['baru', 'diproses'])
+                ->count(),
+            'recentKeluhan' => LaporanGangguan::query()->where('desa_id', $user->desa_id)->latest('reported_at')->latest('id')->limit(5)->get(),
             'namaUnitPengelola' => $namaUnitPengelola,
             'namaKecamatan' => $namaKecamatan,
             'isKecamatanDashboard' => false,
