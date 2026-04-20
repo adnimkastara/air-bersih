@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Desa;
 use App\Models\LaporanGangguan;
 use App\Models\Pelanggan;
+use App\Models\User;
+use App\Notifications\KeluhanBaruNotification;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 
 class KeluhanController extends Controller
@@ -51,7 +54,7 @@ class KeluhanController extends Controller
             'pelanggans' => Pelanggan::query()
                 ->when(! $user->isKecamatanLevel(), fn ($q) => $q->where('desa_id', $user->desa_id))
                 ->orderBy('name')
-                ->get(['id', 'name', 'kode_pelanggan', 'desa_id', 'latitude', 'longitude']),
+                ->get(['id', 'name', 'kode_pelanggan', 'phone', 'desa_id', 'latitude', 'longitude']),
             'desas' => Desa::query()
                 ->when(! $user->isKecamatanLevel(), fn ($q) => $q->where('id', $user->desa_id))
                 ->orderBy('name')
@@ -78,6 +81,8 @@ class KeluhanController extends Controller
         $data['kode_keluhan'] = 'KLH-'.now()->format('Ymd').'-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
         $data['desa_id'] = $data['desa_id'] ?? $pelanggan?->desa_id ?? $request->user()->desa_id;
         $data['kecamatan_id'] = $data['kecamatan_id'] ?? $pelanggan?->kecamatan_id ?? $request->user()->kecamatan_id;
+        $data['pelapor'] = $pelanggan?->name ?? $data['pelapor'];
+        $data['no_hp'] = $data['no_hp'] ?: ($pelanggan?->phone ?? null);
 
         if ($request->hasFile('foto_gangguan')) {
             $data['foto_path'] = $request->file('foto_gangguan')->store('keluhan', 'public');
@@ -85,6 +90,7 @@ class KeluhanController extends Controller
 
         unset($data['foto_gangguan']);
         $laporan = LaporanGangguan::create($data);
+        $this->sendPetugasNotifications($laporan);
 
         $this->logActivity($request, 'create_keluhan', LaporanGangguan::class, $laporan->id, 'Input keluhan/gangguan');
 
@@ -125,6 +131,8 @@ class KeluhanController extends Controller
     {
         return $request->validate([
             'pelanggan_id' => ['nullable', 'integer', 'exists:pelanggans,id'],
+            'pelapor' => ['required_without:pelanggan_id', 'nullable', 'string', 'max:255'],
+            'no_hp' => ['required', 'string', 'max:30'],
             'desa_id' => ['nullable', 'integer', 'exists:desas,id'],
             'kecamatan_id' => ['nullable', 'integer', 'exists:kecamatans,id'],
             'jenis_laporan' => ['required', 'in:gangguan,keluhan'],
@@ -138,6 +146,44 @@ class KeluhanController extends Controller
             'tanggal_kejadian' => ['nullable', 'date'],
             'foto_gangguan' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ]);
+    }
+
+    private function sendPetugasNotifications(LaporanGangguan $laporan): void
+    {
+        $petugasQuery = User::query()
+            ->whereHas('role', fn ($query) => $query->where('name', 'petugas_lapangan'))
+            ->where('is_active', true);
+
+        if ($laporan->desa_id) {
+            $petugasQuery->where('desa_id', $laporan->desa_id);
+        }
+
+        $petugasList = $petugasQuery->get();
+        $whatsAppService = app(WhatsAppService::class);
+
+        foreach ($petugasList as $petugas) {
+            $petugas->notify(new KeluhanBaruNotification($laporan));
+
+            if (! empty($petugas->no_hp)) {
+                $whatsAppService->sendMessage(
+                    $petugas->no_hp,
+                    $this->buildWhatsAppMessage($laporan)
+                );
+            }
+        }
+    }
+
+    private function buildWhatsAppMessage(LaporanGangguan $laporan): string
+    {
+        $lokasi = ($laporan->latitude !== null && $laporan->longitude !== null)
+            ? sprintf('https://maps.google.com/?q=%s,%s', $laporan->latitude, $laporan->longitude)
+            : '-';
+
+        return "Keluhan Baru:\n"
+            ."Judul: {$laporan->judul}\n"
+            .'Pelapor: '.($laporan->pelapor ?? '-')."\n"
+            .'Prioritas: '.ucfirst($laporan->prioritas ?? 'sedang')."\n"
+            ."Lokasi: {$lokasi}";
     }
 
     private function applyRoleScope(Request $request, $query)

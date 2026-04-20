@@ -6,7 +6,8 @@
 <div class="card">
     <p><strong>Judul:</strong> {{ $laporan->judul }}</p>
     <p><strong>Deskripsi:</strong> {{ $laporan->deskripsi }}</p>
-    <p><strong>Pelapor:</strong> {{ $laporan->reporter?->name ?? '-' }}</p>
+    <p><strong>Pelapor:</strong> {{ $laporan->pelapor ?? '-' }}</p>
+    <p><strong>No HP/WA Pelapor:</strong> {{ $laporan->no_hp ?? '-' }}</p>
     <p><strong>Koordinat:</strong> {{ $laporan->latitude ?? '-' }}, {{ $laporan->longitude ?? '-' }}</p>
     <form method="POST" action="{{ route('keluhan.update', $laporan) }}" class="grid-2">
         @csrf

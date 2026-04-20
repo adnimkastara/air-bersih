@@ -689,6 +689,23 @@
 
             <article id="keluhan" class="panel">
                 <h4>Notifikasi & Aktivitas Keluhan Terbaru</h4>
+                @if(($user->role?->name ?? null) === 'petugas_lapangan')
+                    <div style="margin-bottom:10px;">
+                        <strong style="font-size:.86rem;">Notifikasi Masuk</strong>
+                        <div class="complaint-list">
+                            @forelse(($latestNotifications ?? []) as $notification)
+                                <div class="item">
+                                    <div>
+                                        <strong style="font-size:.85rem;">{{ data_get($notification->data, 'judul', 'Keluhan Baru') }}</strong>
+                                        <div style="font-size:.78rem; color:var(--text-soft);">{{ data_get($notification->data, 'message', '-') }}</div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="item"><div style="font-size:.85rem;color:var(--text-soft);">Belum ada notifikasi baru.</div></div>
+                            @endforelse
+                        </div>
+                    </div>
+                @endif
                 <div class="complaint-list">
                     @forelse(($recentKeluhan ?? []) as $keluhan)
                         <div class="item">

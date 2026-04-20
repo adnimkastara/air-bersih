@@ -111,6 +111,8 @@ class FieldAppController extends Controller
     {
         $data = $request->validate([
             'pelanggan_id' => ['nullable', 'integer', 'exists:pelanggans,id'],
+            'pelapor' => ['required_without:pelanggan_id', 'nullable', 'string', 'max:255'],
+            'no_hp' => ['required', 'string', 'max:30'],
             'judul' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string'],
             'jenis_laporan' => ['required', 'in:gangguan,keluhan'],
@@ -133,6 +135,8 @@ class FieldAppController extends Controller
         $data['kode_keluhan'] = 'KLH-'.now()->format('Ymd').'-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
         $data['desa_id'] = $pelanggan?->desa_id ?? $request->user()->desa_id;
         $data['kecamatan_id'] = $pelanggan?->kecamatan_id ?? $request->user()->kecamatan_id;
+        $data['pelapor'] = $pelanggan?->name ?? $data['pelapor'];
+        $data['no_hp'] = $data['no_hp'] ?: ($pelanggan?->phone ?? null);
 
         return response()->json(['message' => 'Keluhan tersimpan.', 'data' => LaporanGangguan::create($data)], 201);
     }

@@ -149,6 +149,7 @@ class DashboardController extends Controller
                 ->when($user->kecamatan_id, fn ($q) => $q->where('kecamatan_id', $user->kecamatan_id))
                 ->count(),
             'recentKeluhan' => $recentKeluhan,
+            'latestNotifications' => $user->unreadNotifications()->latest()->limit(5)->get(),
             'villageSummaries' => $villageSummaries,
             'chartData' => $villageSummaries->take(6)->map(fn ($item) => ['label' => str($item['desa'])->limit(10, ''), 'value' => min(100, max(10, (int) round($item['total_tagihan_kecamatan'] > 0 ? ($item['total_pembayaran_kecamatan'] / $item['total_tagihan_kecamatan']) * 100 : 10)))])->values()->all(),
         ]);
@@ -189,6 +190,7 @@ class DashboardController extends Controller
                 ['label' => 'Mei', 'value' => 74],
                 ['label' => 'Jun', 'value' => 82],
             ],
+            'latestNotifications' => $user->unreadNotifications()->latest()->limit(5)->get(),
         ]);
     }
 }
