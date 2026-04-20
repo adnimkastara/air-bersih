@@ -1,6 +1,6 @@
 # 📚 Air Bersih Documentation Index
 
-**Welcome to Air Bersih MVP Documentation**  
+**Welcome to Air Bersih MVP Documentation**
 All documentation files are in markdown format and can be viewed in any text editor or markdown viewer.
 
 ---
@@ -8,7 +8,7 @@ All documentation files are in markdown format and can be viewed in any text edi
 ## 📖 Documentation Files
 
 ### 1. 🚀 **QUICK_REFERENCE.md** - START HERE
-**Read Time**: 10 minutes  
+**Read Time**: 10 minutes
 **Best For**: Getting started quickly, common commands, debugging tips
 
 **Contents**:
@@ -24,7 +24,7 @@ All documentation files are in markdown format and can be viewed in any text edi
 ---
 
 ### 2. 📋 **MVP_FEATURES.md** - Feature Specifications
-**Read Time**: 25 minutes  
+**Read Time**: 25 minutes
 **Best For**: Understanding what the system can do, business rules, detailed feature descriptions
 
 **Contents**:
@@ -42,7 +42,7 @@ All documentation files are in markdown format and can be viewed in any text edi
 ---
 
 ### 3. 🧪 **TESTING_GUIDE.md** - Test Procedures
-**Read Time**: 40 minutes  
+**Read Time**: 40 minutes
 **Best For**: QA testing, verifying features work, end-to-end flow validation
 
 **Contents**:
@@ -68,7 +68,7 @@ All documentation files are in markdown format and can be viewed in any text edi
 ---
 
 ### 4. 🔧 **TECHNICAL_DOCS.md** - Architecture & Implementation
-**Read Time**: 45 minutes  
+**Read Time**: 45 minutes
 **Best For**: Developers, understanding code structure, technical details
 
 **Contents**:
@@ -90,7 +90,7 @@ All documentation files are in markdown format and can be viewed in any text edi
 ---
 
 ### 5. 📖 **README_SETUP.md** - Installation Guide
-**Read Time**: 20 minutes  
+**Read Time**: 20 minutes
 **Best For**: Setting up the project, initial installation, deployment
 
 **Contents**:
@@ -112,7 +112,7 @@ All documentation files are in markdown format and can be viewed in any text edi
 ---
 
 ### 6. 📊 **PROJECT_SUMMARY.md** - Completion Report
-**Read Time**: 15 minutes  
+**Read Time**: 15 minutes
 **Best For**: Project status, completion checklist, what's implemented
 
 **Contents**:
@@ -129,6 +129,24 @@ All documentation files are in markdown format and can be viewed in any text edi
 - Project conclusion
 
 👉 **[Open PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)**
+
+---
+
+### 7. 🌐 **SHARED_HOSTING_GIT_DEPLOY_AIRBERSIH.md** - Deploy via Git (SSH)
+**Read Time**: 15 minutes
+**Best For**: Deploy production ke shared hosting dengan SSH + git pull workflow
+
+**Contents**:
+- Struktur folder aman untuk `public_html/airbersih`
+- Clone repo dan branch production
+- `composer install --no-dev` untuk production
+- Setup `.env` aman + APP URL subdomain
+- Migrasi database, storage link, permission
+- Cron scheduler minimal
+- Alur update deploy harian via git
+- Checklist verifikasi dan rollback cepat
+
+👉 **[Open SHARED_HOSTING_GIT_DEPLOY_AIRBERSIH.md](./SHARED_HOSTING_GIT_DEPLOY_AIRBERSIH.md)**
 
 ---
 
@@ -210,7 +228,8 @@ All documentation files are in markdown format and can be viewed in any text edi
 | TECHNICAL_DOCS.md | 19.4 KB | 45 min | Architecture details |
 | README_SETUP.md | 11.5 KB | 20 min | Installation guide |
 | PROJECT_SUMMARY.md | 12.3 KB | 15 min | Completion report |
-| **TOTAL** | **80.6 KB** | **155 min** | Complete reference |
+| SHARED_HOSTING_GIT_DEPLOY_AIRBERSIH.md | 8.0 KB | 15 min | Shared hosting git deploy |
+| **TOTAL** | **88.6 KB** | **170 min** | Complete reference |
 
 ---
 
@@ -412,19 +431,19 @@ php artisan serve
 
 ## 🌟 Key Features at a Glance
 
-✅ **13 Features** - All implemented  
-✅ **13 Database Tables** - All created  
-✅ **9 Controllers** - All working  
-✅ **37 Routes** - All configured  
-✅ **100% Complete MVP** - Production ready  
-✅ **Comprehensive Docs** - 6 guides  
-✅ **Full Test Suite** - 10 scenarios  
-✅ **Sample Data** - Ready to test  
+✅ **13 Features** - All implemented
+✅ **13 Database Tables** - All created
+✅ **9 Controllers** - All working
+✅ **37 Routes** - All configured
+✅ **100% Complete MVP** - Production ready
+✅ **Comprehensive Docs** - 6 guides
+✅ **Full Test Suite** - 10 scenarios
+✅ **Sample Data** - Ready to test
 
 ---
 
-**Last Updated**: April 19, 2026  
-**Version**: 1.0  
+**Last Updated**: April 19, 2026
+**Version**: 1.0
 **Status**: Production Ready ✅
 
 ---

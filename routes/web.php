@@ -24,12 +24,14 @@ Route::get('/', function () {
 });
 
 Route::get('/preview', function () {
+    abort_unless(app()->isLocal(), 404);
+
     return view('preview');
 })->name('preview');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.perform');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.perform');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])
