@@ -12,6 +12,8 @@ class LaporanGangguan extends Model
     protected $fillable = [
         'kode_keluhan',
         'pelanggan_id',
+        'pelapor',
+        'no_hp',
         'desa_id',
         'kecamatan_id',
         'reported_by',

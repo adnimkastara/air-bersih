@@ -65,6 +65,7 @@ class UserManagementController extends Controller
         User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'no_hp' => $data['no_hp'] ?? null,
             'password' => Hash::make($data['password']),
             'role_id' => $role->id,
             'desa_id' => $data['desa_id'] ?? null,
@@ -102,6 +103,7 @@ class UserManagementController extends Controller
         $user->update([
             'name' => $data['name'],
             'email' => $data['email'],
+            'no_hp' => $data['no_hp'] ?? null,
             'desa_id' => $data['desa_id'] ?? null,
             'kecamatan_id' => $data['kecamatan_id'] ?? null,
             'petugas_subtype' => $user->hasRole('petugas_lapangan') ? ($data['petugas_subtype'] ?? 'pencatat_meter') : null,

@@ -33,6 +33,7 @@ class UpdateManagedUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($target->id)],
+            'no_hp' => ['nullable', 'string', 'max:30'],
             'kecamatan_id' => $this->user()?->isKecamatanLevel()
                 ? ['nullable', 'integer', 'exists:kecamatans,id']
                 : ['nullable'],

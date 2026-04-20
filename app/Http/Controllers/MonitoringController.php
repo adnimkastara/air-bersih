@@ -81,6 +81,8 @@ class MonitoringController extends Controller
     {
         $data = $request->validate([
             'pelanggan_id' => ['required', 'integer', 'exists:pelanggans,id'],
+            'pelapor' => ['nullable', 'string', 'max:255'],
+            'no_hp' => ['required', 'string', 'max:30'],
             'jenis_laporan' => ['required', 'in:gangguan,keluhan'],
             'judul' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string', 'max:5000'],
@@ -105,6 +107,8 @@ class MonitoringController extends Controller
             'desa_id' => $pelanggan->desa_id,
             'kecamatan_id' => $pelanggan->kecamatan_id,
             'reported_by' => $request->user()?->id,
+            'pelapor' => $pelanggan->name,
+            'no_hp' => $data['no_hp'] ?: $pelanggan->phone,
             'jenis_laporan' => $data['jenis_laporan'],
             'prioritas' => $data['prioritas'] ?? 'sedang',
             'judul' => $data['judul'],

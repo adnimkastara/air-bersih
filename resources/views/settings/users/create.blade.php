@@ -14,6 +14,7 @@
             @csrf
             <div><label>Nama</label><input type="text" name="name" value="{{ old('name') }}" required></div>
             <div><label>Email Login</label><input type="email" name="email" value="{{ old('email') }}" required></div>
+            <div><label>No. HP / WhatsApp</label><input type="text" name="no_hp" value="{{ old('no_hp') }}" placeholder="08xxxxxxxxxx"></div>
 
             <div>
                 <label>Role</label>

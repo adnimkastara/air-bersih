@@ -20,6 +20,7 @@ class StoreManagedUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'no_hp' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role_name' => $actor?->isKecamatanLevel()
                 ? ['required', Rule::in(['admin_kecamatan', 'admin_desa', 'petugas_lapangan'])]

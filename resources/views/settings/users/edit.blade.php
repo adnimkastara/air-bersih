@@ -17,6 +17,7 @@
                 @method('PUT')
                 <div><label>Nama</label><input type="text" name="name" value="{{ old('name', $user->name) }}" required></div>
                 <div><label>Email</label><input type="email" name="email" value="{{ old('email', $user->email) }}" required></div>
+                <div><label>No. HP / WhatsApp</label><input type="text" name="no_hp" value="{{ old('no_hp', $user->no_hp) }}" placeholder="08xxxxxxxxxx"></div>
 
                 <div><label>Role</label><input type="text" value="{{ $user->role?->name }}" disabled></div>
 
