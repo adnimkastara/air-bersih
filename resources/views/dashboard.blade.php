@@ -495,14 +495,7 @@
     $totalPembayaran = (float) $totalPembayaran;
     $totalTunggakan = (float) $totalTunggakan;
     $paymentPercent = $totalTagihan > 0 ? round(($totalPembayaran / $totalTagihan) * 100) : 0;
-    $months = [
-        ['label' => 'Jan', 'value' => 42],
-        ['label' => 'Feb', 'value' => 55],
-        ['label' => 'Mar', 'value' => 61],
-        ['label' => 'Apr', 'value' => 49],
-        ['label' => 'Mei', 'value' => 74],
-        ['label' => 'Jun', 'value' => 82],
-    ];
+    $months = $chartData ?? [];
 @endphp
 
 <div class="layout">
@@ -573,27 +566,34 @@
             <h3>Ringkasan Kinerja Pelayanan Air Bersih Desa</h3>
             <p>{{ $dashboardDescription }}</p>
             <div class="hero-stats">
-                <div><small>Jumlah Pelanggan Aktif</small><strong>{{ number_format($totalPelanggan, 0, ',', '.') }}</strong></div>
-                <div><small>Jumlah Gangguan Tercatat</small><strong>{{ number_format($totalGangguan, 0, ',', '.') }}</strong></div>
-                <div><small>Tingkat Pembayaran</small><strong>{{ $paymentPercent }}%</strong></div>
-                <div><small>Total Tunggakan</small><strong>Rp {{ number_format($totalTunggakan, 0, ',', '.') }}</strong></div>
+                @if($isKecamatanDashboard)
+                    <div><small>Jumlah Desa Aktif</small><strong>{{ number_format($jumlahDesaAktif, 0, ',', '.') }}</strong></div>
+                    <div><small>Total Pelanggan Rumah Tangga</small><strong>{{ number_format($totalPelanggan, 0, ',', '.') }}</strong></div>
+                    <div><small>Total Pemakaian Kecamatan</small><strong>{{ number_format($totalPemakaianM3, 0, ',', '.') }} m³</strong></div>
+                    <div><small>Total Tunggakan Setoran Desa</small><strong>Rp {{ number_format($totalTunggakan, 0, ',', '.') }}</strong></div>
+                @else
+                    <div><small>Jumlah Pelanggan Aktif</small><strong>{{ number_format($totalPelanggan, 0, ',', '.') }}</strong></div>
+                    <div><small>Jumlah Gangguan Tercatat</small><strong>{{ number_format($totalGangguan, 0, ',', '.') }}</strong></div>
+                    <div><small>Tingkat Pembayaran</small><strong>{{ $paymentPercent }}%</strong></div>
+                    <div><small>Total Tunggakan</small><strong>Rp {{ number_format($totalTunggakan, 0, ',', '.') }}</strong></div>
+                @endif
             </div>
         </section>
 
         <section id="statistik" class="cards">
             <article class="stat-card">
                 <div class="big-icon">👥</div>
-                <h4>Total Pelanggan</h4>
+                <h4>{{ $isKecamatanDashboard ? 'Total Pelanggan Rumah Tangga' : 'Total Pelanggan' }}</h4>
                 <strong>{{ number_format($totalPelanggan, 0, ',', '.') }}</strong>
             </article>
             <article class="stat-card">
                 <div class="big-icon">🧾</div>
-                <h4>Total Tagihan</h4>
+                <h4>{{ $isKecamatanDashboard ? 'Total Tagihan Desa ke Kecamatan' : 'Total Tagihan' }}</h4>
                 <strong>Rp {{ number_format($totalTagihan, 0, ',', '.') }}</strong>
             </article>
             <article class="stat-card">
                 <div class="big-icon">💳</div>
-                <h4>Total Pembayaran</h4>
+                <h4>{{ $isKecamatanDashboard ? 'Total Pembayaran Desa ke Kecamatan' : 'Total Pembayaran' }}</h4>
                 <strong>Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</strong>
             </article>
             <article class="stat-card">
@@ -605,7 +605,7 @@
 
         <section class="grid-main">
             <article class="panel">
-                <h4>Grafik Pendapatan • Tagihan • Pembayaran</h4>
+                <h4>{{ $isKecamatanDashboard ? 'Grafik Kepatuhan Setoran per Desa' : 'Grafik Pendapatan • Tagihan • Pembayaran' }}</h4>
                 <div class="bar-chart">
                     @foreach ($months as $month)
                         <div class="bar-wrap">
@@ -633,6 +633,43 @@
                 </div>
             </article>
         </section>
+
+
+        @if($isKecamatanDashboard)
+        <section class="panel" style="overflow:auto;">
+            <h4>Ringkasan Kecamatan per Desa (Periode {{ $selectedPeriod }})</h4>
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Desa</th>
+                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Jml Pelanggan</th>
+                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Pemakaian</th>
+                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Tagihan RT</th>
+                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Pembayaran RT</th>
+                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Tagihan Kec.</th>
+                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Pembayaran Kec.</th>
+                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Status Setoran</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($villageSummaries as $row)
+                        <tr>
+                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">{{ $row['desa'] }}</td>
+                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">{{ number_format($row['jumlah_pelanggan'], 0, ',', '.') }}</td>
+                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">{{ number_format($row['total_pemakaian_m3'], 0, ',', '.') }} m³</td>
+                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">Rp {{ number_format($row['total_tagihan_rumah_tangga'], 0, ',', '.') }}</td>
+                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">Rp {{ number_format($row['total_pembayaran_rumah_tangga'], 0, ',', '.') }}</td>
+                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">Rp {{ number_format($row['total_tagihan_kecamatan'], 0, ',', '.') }}</td>
+                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">Rp {{ number_format($row['total_pembayaran_kecamatan'], 0, ',', '.') }}</td>
+                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">{{ str($row['status_setoran'])->replace('_', ' ')->title() }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" style="padding:8px;">Belum ada data ringkasan desa.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </section>
+        @endif
 
         <section class="grid-bottom">
             <article id="peta" class="panel">

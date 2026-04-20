@@ -23,17 +23,25 @@ class TarifController extends Controller
             ->orderBy('name')
             ->get();
 
+        return view('settings.tarif.index', [
+            'desaTarifs' => $desaTarifs,
+            'desas' => $user->isRoot() ? Desa::orderBy('name')->get() : Desa::where('id', $user->desa_id)->get(),
+            'canManageKecamatanTarif' => $user->isRoot(),
+        ]);
+    }
+
+    public function kecamatan(Request $request): View
+    {
+        abort_unless($request->user()->isRoot(), 403);
+
         $kecamatanTarifs = Tarif::query()
             ->where('scope_type', Tarif::SCOPE_KECAMATAN)
             ->orderByDesc('status')
             ->orderBy('name')
             ->get();
 
-        return view('settings.tarif.index', [
-            'desaTarifs' => $desaTarifs,
+        return view('settings.tarif.kecamatan', [
             'kecamatanTarifs' => $kecamatanTarifs,
-            'desas' => $user->isRoot() ? Desa::orderBy('name')->get() : Desa::where('id', $user->desa_id)->get(),
-            'canManageKecamatanTarif' => $user->isRoot(),
         ]);
     }
 

@@ -20,6 +20,9 @@ class UpdateAppSettingRequest extends FormRequest
             'nama_aplikasi' => ['nullable', 'string', 'max:255'],
             'alamat' => ['nullable', 'string', 'max:255'],
             'kontak' => ['nullable', 'string', 'max:100'],
+            'nama_ketua_direktur' => ['nullable', 'string', 'max:255'],
+            'nama_sekretaris' => ['nullable', 'string', 'max:255'],
+            'nama_bendahara' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

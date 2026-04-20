@@ -26,6 +26,9 @@ class AppSetting extends Model
         'logo_path',
         'alamat',
         'kontak',
+        'nama_ketua_direktur',
+        'nama_sekretaris',
+        'nama_bendahara',
     ];
 
     public function desa(): BelongsTo

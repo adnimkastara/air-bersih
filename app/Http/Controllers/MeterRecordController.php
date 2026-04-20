@@ -6,6 +6,7 @@ use App\Models\MeterRecord;
 use App\Models\Pelanggan;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class MeterRecordController extends Controller
 {
@@ -34,15 +35,33 @@ class MeterRecordController extends Controller
             $petugasQuery->where('desa_id', $request->user()->desa_id);
         }
 
+        $pelanggans = $pelangganQuery->get();
+        $lastRecords = MeterRecord::query()
+            ->whereIn('pelanggan_id', $pelanggans->pluck('id'))
+            ->orderByDesc('recorded_at')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('pelanggan_id')
+            ->mapWithKeys(fn (MeterRecord $record) => [$record->pelanggan_id => (int) $record->meter_current_month]);
+
+        $selectedPelangganId = old('pelanggan_id', $request->query('pelanggan_id'));
+        $defaultPreviousMeter = old('meter_previous_month');
+        if ($defaultPreviousMeter === null && $selectedPelangganId) {
+            $defaultPreviousMeter = $lastRecords->get((int) $selectedPelangganId, 0);
+        }
+
         return view('meter_records.create', [
-            'pelanggans' => $pelangganQuery->get(),
+            'pelanggans' => $pelanggans,
             'petugas' => $petugasQuery->get(),
+            'lastMeters' => $lastRecords,
+            'defaultPreviousMeter' => $defaultPreviousMeter,
+            'selectedPelangganId' => $selectedPelangganId,
         ]);
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'pelanggan_id' => ['required', 'exists:pelanggans,id'],
             'petugas_id' => ['nullable', 'exists:users,id'],
             'meter_previous_month' => ['required', 'integer', 'min:0'],
@@ -52,6 +71,21 @@ class MeterRecordController extends Controller
             'verification_status' => ['required', 'in:pending,terverifikasi,ditolak'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $previous = (int) $request->input('meter_previous_month', 0);
+            $current = (int) $request->input('meter_current_month', 0);
+
+            if ($current < 0 || $previous < 0) {
+                $validator->errors()->add('meter_current_month', 'Nilai meter harus bernilai positif.');
+            }
+
+            if ($current < $previous && blank($request->input('notes'))) {
+                $validator->errors()->add('notes', 'Jika meter bulan ini lebih kecil dari bulan lalu, mohon isi catatan (contoh: ganti meter/koreksi).');
+            }
+        });
+
+        $data = $validator->validate();
 
         $pelanggan = Pelanggan::findOrFail($data['pelanggan_id']);
         $this->abortUnlessCanAccessDesa($request, $pelanggan->desa_id);
