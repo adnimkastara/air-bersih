@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BrandingAssetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesaController;
 use App\Http\Controllers\KecamatanController;
@@ -22,6 +23,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/branding-media/{path}', [BrandingAssetController::class, 'show'])
+    ->where('path', '.*')
+    ->name('branding.media');
 
 Route::get('/preview', function () {
     abort_unless(app()->isLocal(), 404);
