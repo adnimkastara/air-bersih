@@ -32,6 +32,7 @@
         $currencyColumns = ['jumlah','total','selisih','amount','abonemen','tarif_dasar','tarif_per_m3','jumlah_tunggakan','total_tagihan','total_pembayaran','total_tunggakan','total_setoran'];
         $dateColumns = ['tanggal','jatuh_tempo','dibuat_pada','tanggal_bayar','dilaporkan_pada'];
         $headers = array_keys($rows[0] ?? ['data' => 'Tidak ada data']);
+        $namaDesa = $setting?->desa?->name ?? ($filters['desa_id'] ? 'Desa ID '.$filters['desa_id'] : 'Semua Desa');
     @endphp
 
     <table>
@@ -69,7 +70,7 @@
 
     <div class="signature">
         <div class="box">
-            <div>{{ $setting?->nama_unit_pengelola ? 'Atas nama '.$setting->nama_unit_pengelola : 'Unit Pengelola' }}, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
+            <div>{{ $namaDesa }}, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
             <div>Bendahara</div>
             <div class="space"></div>
             <div><strong>{{ $setting?->nama_bendahara ?: '(...................................)' }}</strong></div>

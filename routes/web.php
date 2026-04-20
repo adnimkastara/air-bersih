@@ -60,11 +60,15 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/tarif', [TarifController::class, 'index'])->name('tarif.index');
         Route::post('/tarif/desa', [TarifController::class, 'storeDesa'])->name('tarif.store-desa');
+        Route::put('/tarif/desa/{tarif}', [TarifController::class, 'updateDesa'])->name('tarif.update-desa');
+        Route::delete('/tarif/desa/{tarif}', [TarifController::class, 'destroyDesa'])->name('tarif.destroy-desa');
     });
 
     Route::prefix('settings')->name('settings.')->middleware('role:root')->group(function () {
         Route::get('/tarif/kecamatan', [TarifController::class, 'kecamatan'])->name('tarif.kecamatan');
         Route::post('/tarif/kecamatan', [TarifController::class, 'storeKecamatan'])->name('tarif.store-kecamatan');
+        Route::put('/tarif/kecamatan/{tarif}', [TarifController::class, 'updateKecamatan'])->name('tarif.update-kecamatan');
+        Route::delete('/tarif/kecamatan/{tarif}', [TarifController::class, 'destroyKecamatan'])->name('tarif.destroy-kecamatan');
     });
 
     Route::middleware('role:root,admin_desa')->group(function () {
