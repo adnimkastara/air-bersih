@@ -4,12 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $branding['app_name'] }}</title>
-    <meta name="theme-color" content="{{ $branding['theme_color'] }}">
-    <link rel="icon" href="{{ $branding['favicon_url'] }}">
+    <meta name="theme-color" content="{{ $branding['primary_color'] }}">
+    @if(!empty($branding['favicon_url']))
+        <link rel="icon" href="{{ $branding['favicon_url'] }}">
+    @endif
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     <style>
-        :root { --primary: {{ $branding['theme_color'] }}; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; }
+        :root { --primary: {{ $branding['primary_color'] }}; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; }
         * { box-sizing:border-box; }
         body { margin:0; font-family:'Inter',sans-serif; color:var(--text); background:#f8fafc; }
         .container { width:min(980px, 92%); margin:0 auto; }
@@ -43,7 +45,7 @@
                 @endif
                 <span>
                     <h1>{{ $branding['app_name'] }}</h1>
-                    <p>{{ $branding['subtitle'] }}</p>
+                    <p>{{ $branding['app_subtitle'] }}</p>
                 </span>
             </a>
 
@@ -54,7 +56,7 @@
 
         <main class="hero">
             <h2>{{ $branding['app_name'] }}</h2>
-            <p>{{ $branding['subtitle'] }}. Platform ini mempermudah pengelolaan pelanggan, meter, tagihan, pembayaran, dan monitoring layanan secara lebih tertib.</p>
+            <p>{{ $branding['app_subtitle'] }}. Platform ini mempermudah pengelolaan pelanggan, meter, tagihan, pembayaran, dan monitoring layanan secara lebih tertib.</p>
 
             <div class="feature-grid">
                 <article class="feature">
@@ -74,7 +76,7 @@
 
         <footer>
             <strong>{{ $branding['app_name'] }}</strong><br>
-            {{ $branding['subtitle'] }}<br>
+            {{ $branding['app_subtitle'] }}<br>
             &copy; {{ date('Y') }} {{ $branding['app_name'] }}
         </footer>
     </div>
