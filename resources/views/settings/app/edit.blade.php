@@ -9,12 +9,22 @@
     ])
     @include('layouts.partials.alerts')
     @php
-        $logoUrl = filled($setting->logo_path) ? asset('storage/' . ltrim($setting->logo_path, '/')) : null;
-        $faviconUrl = filled($setting->favicon_path) ? asset('storage/' . ltrim($setting->favicon_path, '/')) : null;
+        $logoUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->logo_path, 'assets/logo/logo-main.svg');
+        $faviconUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->favicon_path, 'favicon.ico');
         $logoIconUrl = $logoUrl;
+        $storageLinkExists = \Illuminate\Support\Facades\File::exists(public_path('storage'));
     @endphp
 
     <div class="card">
+        <div style="margin-bottom:12px; padding:10px 12px; border-radius:10px; border:1px solid #dbe4f0; background:#f8fafc; color:#334155; font-size:.85rem;">
+            Status akses file upload:
+            @if($storageLinkExists)
+                <strong>public/storage tersedia</strong>.
+            @else
+                <strong>public/storage tidak ditemukan</strong>. Sistem tetap memakai fallback route <code>/branding-media/*</code> agar logo/favicon upload tetap tampil.
+            @endif
+        </div>
+
         <form method="POST" action="{{ route('settings.app.update') }}" enctype="multipart/form-data" class="grid-2">
             @csrf
             @method('PUT')

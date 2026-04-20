@@ -7,7 +7,7 @@
         @endif
         <div>
             <strong>{{ $branding['app_name'] }}</strong>
-            <div style="font-size:12px;color:#64748b;">{{ $branding['subtitle'] }}</div>
+            <div style="font-size:12px;color:#64748b;">{{ $branding['app_subtitle'] }}</div>
         </div>
     </div>
 

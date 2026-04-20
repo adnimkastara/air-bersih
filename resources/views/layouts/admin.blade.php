@@ -7,12 +7,14 @@
         $brandingData = $branding ?? [];
         $pageTitle = trim($__env->yieldContent('title', 'Admin'));
         $appName = data_get($brandingData, 'app_name', 'Tirta Sejahtera');
-        $themeColor = data_get($brandingData, 'theme_color', '#1d4ed8');
-        $favicon = data_get($brandingData, 'favicon_url') ?: asset('favicon.ico');
+        $themeColor = data_get($brandingData, 'primary_color', '#1d4ed8');
+        $favicon = data_get($brandingData, 'favicon_url');
     @endphp
     <title>{{ $pageTitle }} | {{ $appName }}</title>
     <meta name="theme-color" content="{{ $themeColor }}">
-    <link rel="icon" href="{{ $favicon }}">
+    @if($favicon)
+        <link rel="icon" href="{{ $favicon }}">
+    @endif
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
