@@ -21,7 +21,8 @@
         .report-table th { background: #f3f4f6; text-align: center; font-weight: 700; }
         .report-table td.text-right { text-align: right; }
         .empty-row { text-align: center; color: #4b5563; padding: 10px 8px; }
-        .signature { margin-top: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .signature-date { margin-top: 30px; font-size: 12px; }
+        .signature { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
         .sign-box { text-align: center; font-size: 12px; }
         .sign-role { margin-top: 4px; }
         .sign-space { height: 72px; }
@@ -36,7 +37,7 @@
     <div class="kop">
         <h2>{{ $setting?->nama_unit_pengelola ?: 'Unit Pengelola Air Bersih Desa' }}</h2>
         <h3>KECAMATAN {{ strtoupper($setting?->nama_kecamatan ?: '-') }}</h3>
-        <p>{{ $setting?->alamat ?: '-' }} | {{ $setting?->kontak ?: '-' }}</p>
+        <p>{{ $setting?->alamat ?: '-' }}</p>
     </div>
 
     @php
@@ -47,8 +48,10 @@
         $desaFilterLabel = data_get($meta, 'desa_label', 'Semua Desa');
         $printedAtLabel = $printedAt->locale('id')->translatedFormat('d F Y H:i');
         $signedAtLabel = $printedAt->locale('id')->translatedFormat('d F Y');
-        $signLocation = $setting?->desa?->name
-            ?? ($setting?->nama_kecamatan ? 'Kecamatan '.$setting->nama_kecamatan : $desaFilterLabel);
+        $isKecamatanReport = ($report ?? null) === 'setoran_kecamatan';
+        $signLocation = $isKecamatanReport
+            ? ($setting?->nama_kecamatan ? 'Kecamatan '.$setting->nama_kecamatan : 'Kecamatan')
+            : ($setting?->desa?->name ? 'Desa '.$setting->desa->name : $desaFilterLabel);
         $bendaharaName = trim((string) ($setting?->nama_bendahara ?? '')) ?: '(...................................)';
         $ketuaName = trim((string) ($setting?->nama_ketua_direktur ?? '')) ?: '(...................................)';
 
@@ -95,7 +98,8 @@
                     @foreach($row as $column => $value)
                         @php
                             $normalizedColumn = strtolower((string) $column);
-                            $isCurrency = collect($currencyColumns)->contains(fn ($key) => str_contains($normalizedColumn, $key));
+                            $isCurrency = collect($currencyColumns)->contains(fn ($key) => str_contains($normalizedColumn, $key))
+                                && ! str_contains($normalizedColumn, 'pemakaian');
                             $isDate = collect($dateColumns)->contains(fn ($key) => str_contains($normalizedColumn, $key));
                         @endphp
                         <td class="{{ $isCurrency ? 'text-right' : '' }}">
@@ -123,20 +127,35 @@
                 </tr>
             @endforelse
         </tbody>
+        @if(($report ?? null) === 'keuangan' && count($rows) > 0)
+            @php
+                $totalPemakaian = collect($rows)->sum('total_pemakaian');
+                $totalPembayaran = collect($rows)->sum('total_pembayaran');
+                $totalTunggakan = collect($rows)->sum('tunggakan');
+            @endphp
+            <tfoot>
+                <tr>
+                    <th colspan="4">TOTAL</th>
+                    <th>{{ number_format((float) $totalPemakaian, 0, ',', '.') }}</th>
+                    <th>Rp {{ number_format((float) $totalPembayaran, 0, ',', '.') }}</th>
+                    <th>Rp {{ number_format((float) $totalTunggakan, 0, ',', '.') }}</th>
+                    <th colspan="2"></th>
+                </tr>
+            </tfoot>
+        @endif
     </table>
 
+    <div class="signature-date">{{ $signLocation }}, {{ $signedAtLabel }}</div>
     <div class="signature">
         <div class="sign-box">
-            <div>{{ $signLocation }}, {{ $signedAtLabel }}</div>
-            <div class="sign-role">Bendahara</div>
-            <div class="sign-space"></div>
-            <div class="sign-name">{{ $bendaharaName }}</div>
-        </div>
-        <div class="sign-box">
-            <div>&nbsp;</div>
             <div class="sign-role">Ketua / Direktur</div>
             <div class="sign-space"></div>
             <div class="sign-name">{{ $ketuaName }}</div>
+        </div>
+        <div class="sign-box">
+            <div class="sign-role">Bendahara</div>
+            <div class="sign-space"></div>
+            <div class="sign-name">{{ $bendaharaName }}</div>
         </div>
     </div>
 </div>

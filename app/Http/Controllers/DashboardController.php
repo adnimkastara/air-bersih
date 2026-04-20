@@ -27,8 +27,6 @@ class DashboardController extends Controller
                     ['label' => 'Data Pelanggan', 'route' => 'pelanggan.index'],
                     ['label' => 'Tagihan Rumah Tangga', 'route' => 'tagihan.index'],
                     ['label' => 'Pembayaran Rumah Tangga', 'route' => 'pembayaran.index'],
-                    ['label' => 'Tagihan Kecamatan', 'route' => 'district-billings.index'],
-                    ['label' => 'Pembayaran Kecamatan', 'route' => 'district-billings.payments'],
                     ['label' => 'Laporan Desa', 'route' => 'laporan.index'],
                 ],
             ],

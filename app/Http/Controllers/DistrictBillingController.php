@@ -15,6 +15,7 @@ class DistrictBillingController extends Controller
 {
     public function index(Request $request): View
     {
+        abort_unless($request->user()->isRoot(), 403);
         $data = $this->loadBillingsByPeriod($request);
 
         return view('district_billings.index', $data);
@@ -22,6 +23,7 @@ class DistrictBillingController extends Controller
 
     public function payments(Request $request): View
     {
+        abort_unless($request->user()->isRoot(), 403);
         $data = $this->loadBillingsByPeriod($request);
 
         return view('district_billings.payments', $data);
@@ -81,7 +83,7 @@ class DistrictBillingController extends Controller
 
     public function recordPayment(Request $request, DistrictBilling $districtBilling): RedirectResponse
     {
-        $this->abortUnlessCanAccessDesa($request, $districtBilling->desa_id);
+        abort_unless($request->user()->isRoot(), 403);
 
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],

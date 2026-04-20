@@ -35,7 +35,7 @@
             @if($user?->isRoot() || $user?->isAdminDesa() || $user?->isPetugasLapangan())
                 <a href="{{ route('pelanggan.index') }}"><i class="bi bi-people"></i> Pelanggan</a>
                 <a href="{{ route('tagihan.index') }}"><i class="bi bi-receipt"></i> Tagihan</a>
-                @if($user?->isRoot() || $user?->isAdminDesa())
+                @if($user?->isRoot())
                     <a href="{{ route('district-billings.index') }}"><i class="bi bi-building"></i> Tagihan Kecamatan</a>
                     <a href="{{ route('district-billings.payments') }}"><i class="bi bi-bank"></i> Pembayaran Kecamatan</a>
                 @endif
