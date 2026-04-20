@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Desa;
 use App\Models\Kecamatan;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class DesaController extends Controller
 {
@@ -26,6 +27,13 @@ class DesaController extends Controller
     {
         $data = $request->validate([
             'kecamatan_id' => ['required', 'exists:kecamatans,id'],
+            'kode_desa' => [
+                'required',
+                'string',
+                'max:20',
+                'regex:/^[A-Za-z0-9\\-]+$/',
+                Rule::unique('desas', 'kode_desa')->where(fn ($query) => $query->where('kecamatan_id', $request->input('kecamatan_id'))),
+            ],
             'name' => ['required', 'string', 'max:255'],
         ]);
 
@@ -47,6 +55,15 @@ class DesaController extends Controller
     {
         $data = $request->validate([
             'kecamatan_id' => ['required', 'exists:kecamatans,id'],
+            'kode_desa' => [
+                'required',
+                'string',
+                'max:20',
+                'regex:/^[A-Za-z0-9\\-]+$/',
+                Rule::unique('desas', 'kode_desa')
+                    ->ignore($desa->id)
+                    ->where(fn ($query) => $query->where('kecamatan_id', $request->input('kecamatan_id'))),
+            ],
             'name' => ['required', 'string', 'max:255'],
         ]);
 

@@ -13,6 +13,14 @@ class Desa extends Model
     protected $fillable = [
         'kecamatan_id',
         'name',
+        'kode_desa',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     public function kecamatan()
@@ -34,4 +42,3 @@ class Desa extends Model
         return $this->hasMany(DistrictBilling::class);
     }
 }
-

@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         Role::firstOrCreate(['name' => 'root']);
+        Role::firstOrCreate(['name' => 'admin_kecamatan']);
         Role::firstOrCreate(['name' => 'admin_desa']);
         Role::firstOrCreate(['name' => 'petugas_lapangan']);
 

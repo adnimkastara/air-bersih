@@ -11,6 +11,7 @@ class Pelanggan extends Model
 
     protected $fillable = [
         'kode_pelanggan',
+        'nomor_urut_desa',
         'name',
         'email',
         'phone',
@@ -29,6 +30,7 @@ class Pelanggan extends Model
     protected $casts = [
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
+        'nomor_urut_desa' => 'integer',
     ];
 
     public function kecamatan()

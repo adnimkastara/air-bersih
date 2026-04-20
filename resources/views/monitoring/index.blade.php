@@ -32,11 +32,19 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-const map = L.map('map').setView([-2.548926, 118.014863], 5);
+const map = L.map('map').setView([-7.6189, 110.9507], 11);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 const statusColor = { aktif: '#16a34a', menunggak: '#d97706', gangguan: '#dc2626' };
 const points = @json($mapPoints); const bounds = [];
 points.forEach((point) => { const marker = L.circleMarker([point.lat, point.lng], { radius: 8, color: statusColor[point.status] ?? '#2563eb', fillOpacity: .9 }).addTo(map); marker.bindPopup(`<strong>${point.name}</strong><br>Kode: ${point.kode}<br>Status: ${point.status}<br><a href="${point.show_url}">Lihat detail</a>`); bounds.push([point.lat, point.lng]); });
 if (bounds.length) map.fitBounds(bounds, { padding: [30, 30] });
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((pos) => {
+        if (!bounds.length) {
+            map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+        }
+        L.circleMarker([pos.coords.latitude, pos.coords.longitude], { radius: 7, color: '#2563eb' }).addTo(map).bindPopup('Lokasi petugas saat ini');
+    });
+}
 </script>
 @endpush

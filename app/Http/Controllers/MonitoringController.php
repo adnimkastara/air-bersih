@@ -25,7 +25,7 @@ class MonitoringController extends Controller
                 'laporanGangguans as gangguan_aktif_count' => fn ($query) => $query->where('jenis_laporan', 'gangguan')->whereIn('status_penanganan', ['baru', 'diproses']),
             ])
             ->orderBy('name')
-            ->when(! $request->user()->isRoot(), fn ($query) => $query->where('desa_id', $request->user()->desa_id))
+            ->when(! $request->user()->isKecamatanLevel(), fn ($query) => $query->where('desa_id', $request->user()->desa_id))
             ->get()
             ->map(function ($pelanggan) {
                 $pelanggan->monitoring_status = $this->resolveStatus($pelanggan);
@@ -42,7 +42,7 @@ class MonitoringController extends Controller
             ->latest('reported_at')
             ->latest('created_at');
 
-        if (! $request->user()->isRoot()) {
+        if (! $request->user()->isKecamatanLevel()) {
             $laporanQuery->whereHas('pelanggan', fn ($query) => $query->where('desa_id', $request->user()->desa_id));
         }
 
@@ -61,7 +61,7 @@ class MonitoringController extends Controller
         return view('monitoring.index', [
             'filters' => $filters,
             'pelanggans' => $pelanggans,
-            'pelangganOptions' => Pelanggan::when(! $request->user()->isRoot(), fn ($query) => $query->where('desa_id', $request->user()->desa_id))->orderBy('name')->get(['id', 'name', 'kode_pelanggan']),
+            'pelangganOptions' => Pelanggan::when(! $request->user()->isKecamatanLevel(), fn ($query) => $query->where('desa_id', $request->user()->desa_id))->orderBy('name')->get(['id', 'name', 'kode_pelanggan']),
             'laporans' => $laporanQuery->paginate(10)->withQueryString(),
             'mapPoints' => $pelanggans
                 ->filter(fn ($pelanggan) => $pelanggan->latitude && $pelanggan->longitude)
@@ -84,7 +84,11 @@ class MonitoringController extends Controller
             'jenis_laporan' => ['required', 'in:gangguan,keluhan'],
             'judul' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string', 'max:5000'],
+            'prioritas' => ['nullable', 'in:rendah,sedang,tinggi'],
             'status_penanganan' => ['required', 'in:baru,diproses,selesai'],
+            'lokasi_text' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'foto_gangguan' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ]);
 
@@ -97,10 +101,17 @@ class MonitoringController extends Controller
 
         $laporan = LaporanGangguan::create([
             'pelanggan_id' => $data['pelanggan_id'],
+            'kode_keluhan' => 'KLH-'.now()->format('Ymd').'-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT),
+            'desa_id' => $pelanggan->desa_id,
+            'kecamatan_id' => $pelanggan->kecamatan_id,
             'reported_by' => $request->user()?->id,
             'jenis_laporan' => $data['jenis_laporan'],
+            'prioritas' => $data['prioritas'] ?? 'sedang',
             'judul' => $data['judul'],
             'deskripsi' => $data['deskripsi'],
+            'lokasi_text' => $data['lokasi_text'] ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
             'status_penanganan' => $data['status_penanganan'],
             'foto_path' => $fotoPath,
             'reported_at' => Carbon::now(),

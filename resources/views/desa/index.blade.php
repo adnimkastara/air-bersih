@@ -15,6 +15,7 @@
         <table>
             <thead>
             <tr>
+                <th>Kode Desa</th>
                 <th>Nama Desa</th>
                 <th>Kecamatan</th>
                 <th style="width:170px;">Aksi</th>
@@ -23,6 +24,7 @@
             <tbody>
             @forelse($desas as $desa)
                 <tr>
+                    <td><strong>{{ $desa->kode_desa ?? '-' }}</strong></td>
                     <td>{{ $desa->name }}</td>
                     <td>{{ $desa->kecamatan->name }}</td>
                     <td>
@@ -37,7 +39,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="3">@include('layouts.partials.empty-state', ['message' => 'Belum ada data desa.'])</td></tr>
+                <tr><td colspan="4">@include('layouts.partials.empty-state', ['message' => 'Belum ada data desa.'])</td></tr>
             @endforelse
             </tbody>
         </table>

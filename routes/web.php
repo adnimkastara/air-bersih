@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesaController;
 use App\Http\Controllers\KecamatanController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\KeluhanController;
 use App\Http\Controllers\MeterRecordController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PelangganController;
@@ -41,12 +42,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/password', [ProfileController::class, 'editPassword'])->name('profile.password.edit');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
-    Route::middleware('role:root')->group(function () {
+    Route::middleware('role:root,admin_kecamatan')->group(function () {
         Route::get('/kecamatan', [KecamatanController::class, 'index'])->name('kecamatan.index');
         Route::get('/admin', [AdminController::class, 'index'])->name('admin');
     });
 
-    Route::prefix('settings')->name('settings.')->middleware('role:root,admin_desa')->group(function () {
+    Route::prefix('settings')->name('settings.')->middleware('role:root,admin_kecamatan,admin_desa')->group(function () {
         Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserManagementController::class, 'create'])->name('users.create');
         Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
@@ -64,33 +65,33 @@ Route::middleware('auth')->group(function () {
         Route::delete('/tarif/desa/{tarif}', [TarifController::class, 'destroyDesa'])->name('tarif.destroy-desa');
     });
 
-    Route::prefix('settings')->name('settings.')->middleware('role:root')->group(function () {
+    Route::prefix('settings')->name('settings.')->middleware('role:root,admin_kecamatan')->group(function () {
         Route::get('/tarif/kecamatan', [TarifController::class, 'kecamatan'])->name('tarif.kecamatan');
         Route::post('/tarif/kecamatan', [TarifController::class, 'storeKecamatan'])->name('tarif.store-kecamatan');
         Route::put('/tarif/kecamatan/{tarif}', [TarifController::class, 'updateKecamatan'])->name('tarif.update-kecamatan');
         Route::delete('/tarif/kecamatan/{tarif}', [TarifController::class, 'destroyKecamatan'])->name('tarif.destroy-kecamatan');
     });
 
-    Route::middleware('role:root,admin_desa')->group(function () {
+    Route::middleware('role:root,admin_kecamatan,admin_desa')->group(function () {
         Route::resource('desa', DesaController::class)->except(['show']);
     });
 
     
-    Route::middleware('role:root,admin_desa')->group(function () {
+    Route::middleware('role:root,admin_kecamatan,admin_desa')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/export/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.export.pdf');
         Route::get('/laporan/export/excel', [LaporanController::class, 'exportExcel'])->name('laporan.export.excel');
     });
 
 
-    Route::middleware('role:root')->group(function () {
+    Route::middleware('role:root,admin_kecamatan')->group(function () {
         Route::get('/district-billings', [DistrictBillingController::class, 'index'])->name('district-billings.index');
         Route::get('/district-billings/payments', [DistrictBillingController::class, 'payments'])->name('district-billings.payments');
         Route::post('/district-billings/generate', [DistrictBillingController::class, 'generate'])->name('district-billings.generate');
         Route::post('/district-billings/{districtBilling}/payment', [DistrictBillingController::class, 'recordPayment'])->name('district-billings.record-payment');
     });
 
-Route::middleware('role:root,admin_desa,petugas_lapangan')->group(function () {
+Route::middleware('role:admin_desa,petugas_lapangan')->group(function () {
         Route::resource('pelanggan', PelangganController::class);
         Route::get('/tagihan', [TagihanController::class, 'index'])->name('tagihan.index');
         Route::get('/tagihan/{tagihan}', [TagihanController::class, 'show'])->name('tagihan.show');
@@ -107,7 +108,18 @@ Route::middleware('role:root,admin_desa,petugas_lapangan')->group(function () {
         Route::post('/pembayaran', [PembayaranController::class, 'store'])->name('pembayaran.store');
         Route::get('/pembayaran/{pembayaran}/receipt', [PembayaranController::class, 'receipt'])->name('pembayaran.receipt');
 
-        Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
         Route::post('/monitoring/laporan', [MonitoringController::class, 'store'])->name('monitoring.store');
+    });
+
+    Route::middleware('role:root,admin_kecamatan,admin_desa,petugas_lapangan')->group(function () {
+        Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
+    });
+
+    Route::middleware('role:root,admin_kecamatan,admin_desa,petugas_lapangan')->group(function () {
+        Route::get('/keluhan', [KeluhanController::class, 'index'])->name('keluhan.index');
+        Route::get('/keluhan/create', [KeluhanController::class, 'create'])->name('keluhan.create');
+        Route::post('/keluhan', [KeluhanController::class, 'store'])->name('keluhan.store');
+        Route::get('/keluhan/{laporanGangguan}', [KeluhanController::class, 'show'])->name('keluhan.show');
+        Route::put('/keluhan/{laporanGangguan}', [KeluhanController::class, 'update'])->name('keluhan.update');
     });
 });

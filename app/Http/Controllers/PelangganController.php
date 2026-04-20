@@ -6,11 +6,17 @@ use App\Models\Desa;
 use App\Models\Kecamatan;
 use App\Models\Pelanggan;
 use App\Models\User;
+use App\Services\GenerateCustomerCodeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class PelangganController extends Controller
 {
+    public function __construct(private readonly GenerateCustomerCodeService $customerCodeService)
+    {
+    }
+
     public function index(Request $request)
     {
         $filters = $request->validate([
@@ -80,6 +86,7 @@ class PelangganController extends Controller
             'kecamatans' => $user->isRoot() ? Kecamatan::orderBy('name')->get() : Kecamatan::whereHas('desas', fn ($q) => $q->where('id', $user->desa_id))->get(),
             'desas' => $user->isRoot() ? Desa::orderBy('name')->get() : Desa::where('id', $user->desa_id)->orderBy('name')->get(),
             'petugas' => $this->petugasOptions($request),
+            'defaultCenter' => ['lat' => -7.6189, 'lng' => 110.9507],
         ]);
     }
 
@@ -92,8 +99,14 @@ class PelangganController extends Controller
         }
 
         $this->abortUnlessCanAccessDesa($request, $data['desa_id']);
+        $pelanggan = DB::transaction(function () use ($data) {
+            $desa = Desa::query()->lockForUpdate()->findOrFail($data['desa_id']);
+            $generated = $this->customerCodeService->nextForDesa($desa);
+            $data['kode_pelanggan'] = $generated['kode_pelanggan'];
+            $data['nomor_urut_desa'] = $generated['nomor_urut_desa'];
 
-        $pelanggan = Pelanggan::create($data);
+            return Pelanggan::create($data);
+        });
         $this->logActivity($request, 'create_pelanggan', Pelanggan::class, $pelanggan->id, "Membuat pelanggan {$pelanggan->name}");
 
         return redirect()->route('pelanggan.index')->with('status', 'Pelanggan berhasil dibuat.');
@@ -118,6 +131,7 @@ class PelangganController extends Controller
             'kecamatans' => $user->isRoot() ? Kecamatan::orderBy('name')->get() : Kecamatan::whereHas('desas', fn ($q) => $q->where('id', $user->desa_id))->get(),
             'desas' => $user->isRoot() ? Desa::orderBy('name')->get() : Desa::where('id', $user->desa_id)->get(),
             'petugas' => $this->petugasOptions($request),
+            'defaultCenter' => ['lat' => -7.6189, 'lng' => 110.9507],
         ]);
     }
 
@@ -151,7 +165,7 @@ class PelangganController extends Controller
     protected function validatePelanggan(Request $request, ?int $pelangganId = null): array
     {
         return $request->validate([
-            'kode_pelanggan' => ['required', 'string', 'max:50', Rule::unique('pelanggans', 'kode_pelanggan')->ignore($pelangganId)],
+            'kode_pelanggan' => ['prohibited'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
