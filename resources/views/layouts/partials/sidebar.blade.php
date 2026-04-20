@@ -1,10 +1,12 @@
 <aside class="sidebar">
     <div class="brand">
-        @if(!empty($branding['logo_icon_url']))
-            <img src="{{ $branding['logo_icon_url'] }}" alt="Logo {{ $branding['app_name'] }}" class="brand-logo" loading="lazy">
-        @else
-            <span class="brand-fallback-mark">{{ $branding['initials'] }}</span>
-        @endif
+        @include('layouts.partials.brand-media', [
+            'imageUrl' => $branding['logo_icon_url'] ?? null,
+            'appName' => $branding['app_name'] ?? null,
+            'initials' => $branding['initials'] ?? null,
+            'imgClass' => 'brand-logo',
+            'fallbackClass' => 'brand-fallback-mark',
+        ])
         <span class="brand-text">{{ $branding['app_name'] }}</span>
     </div>
 
