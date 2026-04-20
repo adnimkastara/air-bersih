@@ -12,12 +12,15 @@ use App\Models\AppSetting;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class LaporanController extends Controller
 {
     public function index(Request $request)
     {
-        $filters = $this->applyRoleFilter($request, $this->validateFilters($request));
+        $filters = $this->normalizeFilters(
+            $this->applyRoleFilter($request, $this->validateFilters($request))
+        );
         $reports = $this->buildReports($filters);
 
         return view('laporan.index', [
@@ -29,10 +32,13 @@ class LaporanController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $filters = $this->applyRoleFilter($request, $this->validateFilters($request));
         $report = $request->validate([
             'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan,setoran_kecamatan'],
         ])['report'];
+        $filters = $this->normalizeFilters(
+            $this->applyRoleFilter($request, $this->validateFilters($request)),
+            $report
+        );
 
         $reports = $this->buildReports($filters);
 
@@ -48,10 +54,13 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $filters = $this->applyRoleFilter($request, $this->validateFilters($request));
         $report = $request->validate([
             'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan,setoran_kecamatan'],
         ])['report'];
+        $filters = $this->normalizeFilters(
+            $this->applyRoleFilter($request, $this->validateFilters($request)),
+            $report
+        );
 
         $reports = $this->buildReports($filters);
         $setting = AppSetting::resolveForUser($request->user());
@@ -66,11 +75,14 @@ class LaporanController extends Controller
             'setoran_kecamatan' => 'Laporan Setoran Desa ke Kecamatan',
         ];
 
+        $exportMeta = $this->buildExportMeta($filters, $report, $labels[$report]);
+
         return response()->view('laporan.exports.pdf', [
             'report' => $report,
             'title' => $labels[$report],
             'rows' => $reports[$report],
             'filters' => $filters,
+            'exportMeta' => $exportMeta,
             'setting' => $setting,
             'printedAt' => now(),
         ]);
@@ -96,6 +108,70 @@ class LaporanController extends Controller
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'desa_id' => ['nullable', 'integer', 'exists:desas,id'],
         ]);
+    }
+
+    private function normalizeFilters(array $filters, ?string $report = null): array
+    {
+        $normalized = [
+            'report' => $report,
+            'desa_id' => null,
+            'date_from' => null,
+            'date_to' => null,
+            'period' => null,
+            'status' => null,
+        ];
+
+        foreach ($normalized as $key => $defaultValue) {
+            $normalized[$key] = $filters[$key] ?? $defaultValue;
+        }
+
+        return $normalized;
+    }
+
+    private function buildExportMeta(array $filters, string $report, string $title): array
+    {
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo = $filters['date_to'] ?? null;
+
+        return [
+            'report_label' => $title,
+            'report_type_label' => Str::of($report)->replace('_', ' ')->title()->toString(),
+            'period_label' => $this->formatPeriodLabel($dateFrom, $dateTo),
+            'desa_label' => $this->formatDesaLabel($filters['desa_id'] ?? null, $report),
+        ];
+    }
+
+    private function formatPeriodLabel(?string $dateFrom, ?string $dateTo): string
+    {
+        $fromLabel = $dateFrom ? Carbon::parse($dateFrom)->locale('id')->translatedFormat('d F Y') : null;
+        $toLabel = $dateTo ? Carbon::parse($dateTo)->locale('id')->translatedFormat('d F Y') : null;
+
+        if ($fromLabel && $toLabel) {
+            return "{$fromLabel} s/d {$toLabel}";
+        }
+
+        if ($fromLabel) {
+            return "Sejak {$fromLabel}";
+        }
+
+        if ($toLabel) {
+            return "Sampai {$toLabel}";
+        }
+
+        return 'Semua Periode';
+    }
+
+    private function formatDesaLabel($desaId, string $report): string
+    {
+        if (! $desaId) {
+            return $report === 'setoran_kecamatan'
+                ? 'Semua Desa (Laporan Kecamatan)'
+                : 'Semua Desa';
+        }
+
+        $desaName = Desa::query()->whereKey($desaId)->value('name');
+
+        return $desaName ? "Desa {$desaName}" : "Desa ID {$desaId}";
     }
 
     private function buildReports(array $filters): array
