@@ -1,0 +1,7 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo aplikasi Tirta Sejahtera">
+  <rect width="512" height="512" rx="96" fill="#0D9488"/>
+  <rect x="36" y="36" width="440" height="440" rx="84" fill="#0E7490"/>
+  <path d="M130 170H382V214H278V370H232V214H130Z" fill="white"/>
+  <path d="M150 286L202 240H300L362 288V334H302L272 308H210L186 334H150V286Z" fill="#6EE7B7"/>
+  <path d="M120 378C170 428 342 428 392 378" stroke="#67E8F9" stroke-width="18" fill="none" stroke-linecap="round"/>
+</svg>

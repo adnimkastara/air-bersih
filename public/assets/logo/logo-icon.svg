@@ -1,0 +1,6 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo ikon Tirta Sejahtera">
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#0F172A"/>
+  <path d="M26 80C42 102 78 102 100 80" stroke="#38BDF8" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="M24 92C42 114 78 114 102 92" stroke="#2DD4BF" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M68 24L92 42L62 56Z" fill="#4ADE80"/>
+</svg>
