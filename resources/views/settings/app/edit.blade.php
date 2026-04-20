@@ -8,6 +8,11 @@
         'subtitle' => 'Atur identitas aplikasi yang dipakai landing page, login, navbar, sidebar, title, dan favicon.'
     ])
     @include('layouts.partials.alerts')
+    @php
+        $logoUrl = filled($setting->logo_path) ? asset('storage/' . ltrim($setting->logo_path, '/')) : null;
+        $faviconUrl = filled($setting->favicon_path) ? asset('storage/' . ltrim($setting->favicon_path, '/')) : null;
+        $logoIconUrl = $logoUrl;
+    @endphp
 
     <div class="card">
         <form method="POST" action="{{ route('settings.app.update') }}" enctype="multipart/form-data" class="grid-2">
@@ -32,17 +37,44 @@
             <div>
                 <label>Logo (Landing + Login + Navbar + Sidebar)</label>
                 <input type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.svg">
-                @if($setting->logo_path)
-                    <small style="display:block; margin-top:6px; color:#64748b;">Logo aktif: <a href="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($setting->logo_path) }}" target="_blank">lihat file</a></small>
+                @if($logoUrl)
+                    <small style="display:block; margin-top:6px; color:#64748b;">Logo aktif: <a href="{{ $logoUrl }}" target="_blank">lihat file</a></small>
                 @endif
             </div>
 
             <div>
                 <label>Favicon</label>
                 <input type="file" name="favicon" accept=".png,.ico">
-                @if($setting->favicon_path)
-                    <small style="display:block; margin-top:6px; color:#64748b;">Favicon aktif: <a href="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($setting->favicon_path) }}" target="_blank">lihat file</a></small>
+                @if($faviconUrl)
+                    <small style="display:block; margin-top:6px; color:#64748b;">Favicon aktif: <a href="{{ $faviconUrl }}" target="_blank">lihat file</a></small>
                 @endif
+            </div>
+
+            <div class="full" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+                    <small style="display:block; margin-bottom:6px; color:#64748b;">Preview Logo</small>
+                    @if($logoUrl)
+                        <img src="{{ $logoUrl }}" alt="Preview logo" style="max-height:56px; width:auto;">
+                    @else
+                        <small style="color:#94a3b8;">Belum ada logo.</small>
+                    @endif
+                </div>
+                <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+                    <small style="display:block; margin-bottom:6px; color:#64748b;">Preview Logo Icon</small>
+                    @if($logoIconUrl)
+                        <img src="{{ $logoIconUrl }}" alt="Preview logo icon" style="height:40px; width:40px; object-fit:contain;">
+                    @else
+                        <small style="color:#94a3b8;">Belum ada logo icon.</small>
+                    @endif
+                </div>
+                <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+                    <small style="display:block; margin-bottom:6px; color:#64748b;">Preview Favicon</small>
+                    @if($faviconUrl)
+                        <img src="{{ $faviconUrl }}" alt="Preview favicon" style="height:24px; width:24px; object-fit:contain;">
+                    @else
+                        <small style="color:#94a3b8;">Belum ada favicon.</small>
+                    @endif
+                </div>
             </div>
 
             <div><label>Nama Kecamatan</label><input type="text" name="nama_kecamatan" value="{{ old('nama_kecamatan', $setting->nama_kecamatan ?: ($user->isKecamatanLevel() ? null : $globalSetting->nama_kecamatan)) }}"></div>
