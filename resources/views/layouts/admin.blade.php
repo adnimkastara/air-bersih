@@ -35,6 +35,9 @@
             @if($user?->isRoot() || $user?->isAdminDesa() || $user?->isPetugasLapangan())
                 <a href="{{ route('pelanggan.index') }}"><i class="bi bi-people"></i> Pelanggan</a>
                 <a href="{{ route('tagihan.index') }}"><i class="bi bi-receipt"></i> Tagihan</a>
+                @if($user?->isRoot() || $user?->isAdminDesa())
+                    <a href="{{ route('district-billings.index') }}"><i class="bi bi-building"></i> Setoran Kecamatan</a>
+                @endif
                 <a href="{{ route('meter_records.index') }}"><i class="bi bi-speedometer"></i> Meter Record</a>
                 <a href="{{ route('pembayaran.index') }}"><i class="bi bi-cash-stack"></i> Pembayaran</a>
                 <a href="{{ route('monitoring.index') }}"><i class="bi bi-geo-alt"></i> Monitoring</a>
@@ -46,6 +49,7 @@
                     <div class="menu-group-title">Pengaturan</div>
                     <div class="submenu">
                         <a href="{{ route('settings.users.index') }}"><i class="bi bi-person-gear"></i> Manajemen User</a>
+                        <a href="{{ route('settings.tarif.index') }}"><i class="bi bi-cash-coin"></i> Setting Tarif</a>
                         <a href="{{ route('settings.app.edit') }}"><i class="bi bi-sliders"></i> Setting Aplikasi</a>
                     </div>
                 </div>

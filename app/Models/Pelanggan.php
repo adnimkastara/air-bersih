@@ -60,12 +60,14 @@ class Pelanggan extends Model
     public function activeTarif()
     {
         return Tarif::query()
-            ->where('is_active', true)
+            ->where('scope_type', Tarif::SCOPE_DESA)
+            ->where('village_id', $this->desa_id)
+            ->where('status', 'aktif')
             ->where(function ($query) {
-                $query->where('customer_type', $this->jenis_pelanggan)
-                    ->orWhereNull('customer_type');
+                $query->where('category', $this->jenis_pelanggan)
+                    ->orWhereNull('category');
             })
-            ->orderByRaw('customer_type is null')
+            ->orderByRaw('category is null')
             ->orderByDesc('effective_start')
             ->first();
     }

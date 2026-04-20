@@ -20,18 +20,19 @@
 <div class="card table-wrap">
     <h3 style="margin-top:0;">Tabel Tarif</h3>
     <table>
-        <thead><tr><th>Nama Tarif</th><th>Jenis</th><th>Tarif Dasar</th><th>Pemakaian / m³</th><th>Denda / hari</th><th>Status</th></tr></thead>
+        <thead><tr><th>Nama Tarif</th><th>Desa</th><th>Kategori</th><th>Abonemen</th><th>Tarif Dasar</th><th>Pemakaian / m³</th><th>Denda / hari</th><th>Status</th></tr></thead>
         <tbody>
         @forelse($tarifs as $tarif)
             <tr>
-                <td>{{ $tarif->name }}</td><td>{{ $tarif->customer_type ?? 'Semua jenis' }}</td>
-                <td>Rp {{ number_format($tarif->base_rate, 0, ',', '.') }}</td>
-                <td>Rp {{ number_format($tarif->usage_rate, 0, ',', '.') }}</td>
+                <td>{{ $tarif->name }}</td><td>{{ $tarif->desa?->name ?? '-' }}</td><td>{{ $tarif->category ?? 'Semua kategori' }}</td>
+                <td>Rp {{ number_format($tarif->abonemen, 0, ',', '.') }}</td>
+                <td>Rp {{ number_format($tarif->tarif_dasar, 0, ',', '.') }}</td>
+                <td>Rp {{ number_format($tarif->tarif_per_m3, 0, ',', '.') }}</td>
                 <td>Rp {{ number_format($tarif->late_fee_per_day, 0, ',', '.') }}</td>
-                <td><span class="badge {{ $tarif->is_active ? 'badge-success' : 'badge-danger' }}">{{ $tarif->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
+                <td><span class="badge {{ $tarif->status === 'aktif' ? 'badge-success' : 'badge-danger' }}">{{ ucfirst($tarif->status) }}</span></td>
             </tr>
         @empty
-            <tr><td colspan="6">@include('layouts.partials.empty-state', ['message' => 'Belum ada data tarif.'])</td></tr>
+            <tr><td colspan="8">@include('layouts.partials.empty-state', ['message' => 'Belum ada data tarif.'])</td></tr>
         @endforelse
         </tbody>
     </table>
