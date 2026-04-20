@@ -26,5 +26,5 @@
 @empty <tr><td colspan="4">@include('layouts.partials.empty-state', ['message' => 'Belum ada pembayaran untuk tagihan ini.'])</td></tr> @endforelse
 </tbody></table>
 </div>
-<a href="{{ route('tagihan.index') }}" class="btn btn-outline">Kembali</a>
+<div style="display:flex;gap:8px;"><a href="{{ route('tagihan.index') }}" class="btn btn-outline">Kembali</a><a href="{{ route('tagihan.print', $tagihan) }}" class="btn btn-primary" target="_blank">Cetak Billing</a></div>
 @endsection

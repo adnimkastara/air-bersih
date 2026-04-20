@@ -19,6 +19,9 @@
             <div><label>Nama Aplikasi</label><input type="text" name="nama_aplikasi" value="{{ old('nama_aplikasi', $setting->nama_aplikasi) }}" placeholder="Opsional"></div>
             <div><label>Alamat</label><input type="text" name="alamat" value="{{ old('alamat', $setting->alamat) }}"></div>
             <div><label>Kontak</label><input type="text" name="kontak" value="{{ old('kontak', $setting->kontak) }}"></div>
+            <div><label>Nama Ketua / Direktur</label><input type="text" name="nama_ketua_direktur" value="{{ old('nama_ketua_direktur', $setting->nama_ketua_direktur) }}"></div>
+            <div><label>Nama Sekretaris</label><input type="text" name="nama_sekretaris" value="{{ old('nama_sekretaris', $setting->nama_sekretaris) }}"></div>
+            <div><label>Nama Bendahara</label><input type="text" name="nama_bendahara" value="{{ old('nama_bendahara', $setting->nama_bendahara) }}"></div>
             <div class="full" style="display:flex;gap:8px;">
                 <button class="btn btn-primary" type="submit">Simpan Setting</button>
             </div>

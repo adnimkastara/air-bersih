@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MeterRecord;
 use App\Models\Tagihan;
+use App\Models\AppSetting;
 use App\Models\Tarif;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -126,6 +127,20 @@ class TagihanController extends Controller
         $this->logActivity($request, 'publish_tagihan', Tagihan::class, $tagihan->id, "Menerbitkan tagihan {$tagihan->id}");
 
         return back()->with('status', 'Tagihan berhasil diterbitkan.');
+    }
+
+    public function print(Request $request, Tagihan $tagihan)
+    {
+        $this->abortUnlessCanAccessDesa($request, $tagihan->pelanggan?->desa_id);
+        $tagihan->load(['pelanggan.desa.kecamatan', 'meterRecord', 'tarif']);
+
+        $setting = AppSetting::resolveForUser($request->user());
+
+        return view('tagihan.print', [
+            'tagihan' => $tagihan,
+            'setting' => $setting,
+            'printedAt' => now(),
+        ]);
     }
 
     private function refreshLateFees(Request $request): void

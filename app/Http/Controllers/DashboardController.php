@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\AppSetting;
+use App\Models\Desa;
+use App\Models\DistrictBilling;
+use App\Models\MeterRecord;
 use App\Models\Pelanggan;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
@@ -19,63 +22,130 @@ class DashboardController extends Controller
         [$dashboardTitle, $dashboardDescription, $shortcuts] = match ($roleName) {
             'admin_desa' => [
                 'Dashboard Admin Desa',
-                'Akses operasional untuk data desa, pelanggan, proses tagihan, pembayaran, monitoring, laporan, dan manajemen petugas desa.',
+                'Akses operasional level desa: pelanggan rumah tangga, tagihan dan pembayaran rumah tangga di desa Anda.',
                 [
                     ['label' => 'Data Pelanggan', 'route' => 'pelanggan.index'],
-                    ['label' => 'Tagihan', 'route' => 'tagihan.index'],
-                    ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
-                    ['label' => 'Monitoring', 'route' => 'monitoring.index'],
+                    ['label' => 'Tagihan Rumah Tangga', 'route' => 'tagihan.index'],
+                    ['label' => 'Pembayaran Rumah Tangga', 'route' => 'pembayaran.index'],
+                    ['label' => 'Tagihan Kecamatan', 'route' => 'district-billings.index'],
+                    ['label' => 'Pembayaran Kecamatan', 'route' => 'district-billings.payments'],
                     ['label' => 'Laporan Desa', 'route' => 'laporan.index'],
-                    ['label' => 'User Petugas', 'route' => 'settings.users.index'],
                 ],
             ],
             'petugas_lapangan' => [
                 'Dashboard Petugas Lapangan',
-                'Akses untuk pencatatan meter, operasional tagihan, pembayaran, dan monitoring desa penugasan.',
+                'Akses operasional lapangan untuk pencatatan meter, tagihan rumah tangga, pembayaran rumah tangga, dan monitoring desa tugas.',
                 [
-                    ['label' => 'Pencatatan', 'route' => 'meter_records.index'],
+                    ['label' => 'Pencatatan Meter', 'route' => 'meter_records.create'],
                     ['label' => 'Tagihan', 'route' => 'tagihan.index'],
-                    ['label' => 'Meter Record', 'route' => 'meter_records.create'],
                     ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
                     ['label' => 'Monitoring', 'route' => 'monitoring.index'],
                 ],
             ],
             default => [
-                'Dashboard Root',
-                'Akses penuh lintas desa untuk manajemen master, operasional, laporan, dan user management.',
+                'Dashboard Kecamatan (Root)',
+                'Ringkasan lintas desa berbasis agregasi per desa. Tidak menampilkan pelanggan rumah tangga sebagai unit utama.',
                 [
                     ['label' => 'Master Kecamatan', 'route' => 'kecamatan.index'],
                     ['label' => 'Master Desa', 'route' => 'desa.index'],
-                    ['label' => 'Data Pelanggan', 'route' => 'pelanggan.index'],
-                    ['label' => 'Tagihan', 'route' => 'tagihan.index'],
-                    ['label' => 'Pembayaran', 'route' => 'pembayaran.index'],
-                    ['label' => 'Monitoring', 'route' => 'monitoring.index'],
-                    ['label' => 'Laporan', 'route' => 'laporan.index'],
+                    ['label' => 'Tagihan Kecamatan', 'route' => 'district-billings.index'],
+                    ['label' => 'Pembayaran Kecamatan', 'route' => 'district-billings.payments'],
+                    ['label' => 'Laporan Kecamatan', 'route' => 'laporan.index'],
                     ['label' => 'User Management', 'route' => 'settings.users.index'],
                 ],
             ],
         };
 
-
         $identitySetting = AppSetting::resolveForUser($user);
         $namaUnitPengelola = $identitySetting?->nama_unit_pengelola;
         $namaKecamatan = $identitySetting?->nama_kecamatan;
 
-        $pelangganQuery = Pelanggan::query();
-        $tagihanQuery = Tagihan::query();
-        $pembayaranQuery = Pembayaran::query();
+        if ($user->isRoot()) {
+            return $this->buildKecamatanDashboard($user, $dashboardTitle, $dashboardDescription, $shortcuts, $namaUnitPengelola, $namaKecamatan);
+        }
+
+        return $this->buildDesaDashboard($request, $user, $dashboardTitle, $dashboardDescription, $shortcuts, $namaUnitPengelola, $namaKecamatan);
+    }
+
+    private function buildKecamatanDashboard($user, string $dashboardTitle, string $dashboardDescription, array $shortcuts, ?string $namaUnitPengelola, ?string $namaKecamatan)
+    {
+        $period = now()->format('Y-m');
+
+        $pelangganPerDesa = Pelanggan::query()
+            ->selectRaw('desa_id, COUNT(*) as total')
+            ->groupBy('desa_id')
+            ->pluck('total', 'desa_id');
+
+        $pemakaianPerDesa = MeterRecord::query()
+            ->selectRaw('pelanggans.desa_id as desa_id, SUM(GREATEST(meter_records.meter_current_month - meter_records.meter_previous_month, 0)) as total_usage')
+            ->join('pelanggans', 'pelanggans.id', '=', 'meter_records.pelanggan_id')
+            ->groupBy('pelanggans.desa_id')
+            ->pluck('total_usage', 'desa_id');
+
+        $tagihanRtPerDesa = Tagihan::query()
+            ->selectRaw('pelanggans.desa_id as desa_id, SUM(tagihans.amount) as total_tagihan')
+            ->join('pelanggans', 'pelanggans.id', '=', 'tagihans.pelanggan_id')
+            ->groupBy('pelanggans.desa_id')
+            ->pluck('total_tagihan', 'desa_id');
+
+        $pembayaranRtPerDesa = Pembayaran::query()
+            ->selectRaw('pelanggans.desa_id as desa_id, SUM(pembayarans.amount) as total_pembayaran')
+            ->join('tagihans', 'tagihans.id', '=', 'pembayarans.tagihan_id')
+            ->join('pelanggans', 'pelanggans.id', '=', 'tagihans.pelanggan_id')
+            ->groupBy('pelanggans.desa_id')
+            ->pluck('total_pembayaran', 'desa_id');
+
+        $districtBillsByDesa = DistrictBilling::query()->where('period', $period)->get()->keyBy('desa_id');
+
+        $villageSummaries = Desa::query()->orderBy('name')->get()->map(function (Desa $desa) use ($pelangganPerDesa, $pemakaianPerDesa, $tagihanRtPerDesa, $pembayaranRtPerDesa, $districtBillsByDesa) {
+            $districtBill = $districtBillsByDesa->get($desa->id);
+
+            return [
+                'desa_id' => $desa->id,
+                'desa' => $desa->name,
+                'jumlah_pelanggan' => (int) ($pelangganPerDesa[$desa->id] ?? 0),
+                'total_pemakaian_m3' => (int) ($pemakaianPerDesa[$desa->id] ?? 0),
+                'total_tagihan_rumah_tangga' => (float) ($tagihanRtPerDesa[$desa->id] ?? 0),
+                'total_pembayaran_rumah_tangga' => (float) ($pembayaranRtPerDesa[$desa->id] ?? 0),
+                'total_tagihan_kecamatan' => (float) ($districtBill?->total_setoran ?? 0),
+                'total_pembayaran_kecamatan' => (float) ($districtBill?->paid_amount ?? 0),
+                'status_setoran' => $districtBill?->payment_status ?? 'belum_bayar',
+            ];
+        });
+        $districtBillings = DistrictBilling::query()->where('period', $period)->get();
+
+        return view('dashboard', [
+            'user' => $user,
+            'role' => $user->role,
+            'dashboardTitle' => $dashboardTitle,
+            'dashboardDescription' => $dashboardDescription,
+            'shortcuts' => $shortcuts,
+            'namaUnitPengelola' => $namaUnitPengelola,
+            'namaKecamatan' => $namaKecamatan,
+            'isKecamatanDashboard' => true,
+            'selectedPeriod' => $period,
+            'jumlahDesaAktif' => $villageSummaries->count(),
+            'totalPelanggan' => (int) $villageSummaries->sum('jumlah_pelanggan'),
+            'totalPemakaianM3' => (int) $villageSummaries->sum('total_pemakaian_m3'),
+            'totalTagihan' => (float) $districtBillings->sum('total_setoran'),
+            'totalPembayaran' => (float) $districtBillings->sum('paid_amount'),
+            'totalTunggakan' => (float) ($districtBillings->sum('total_setoran') - $districtBillings->sum('paid_amount')),
+            'totalGangguan' => ActivityLog::where('action', 'like', '%gangguan%')->count(),
+            'villageSummaries' => $villageSummaries,
+            'chartData' => $villageSummaries->take(6)->map(fn ($item) => ['label' => str($item['desa'])->limit(10, ''), 'value' => min(100, max(10, (int) round($item['total_tagihan_kecamatan'] > 0 ? ($item['total_pembayaran_kecamatan'] / $item['total_tagihan_kecamatan']) * 100 : 10)))])->values()->all(),
+        ]);
+    }
+
+    private function buildDesaDashboard(Request $request, $user, string $dashboardTitle, string $dashboardDescription, array $shortcuts, ?string $namaUnitPengelola, ?string $namaKecamatan)
+    {
+        $pelangganQuery = Pelanggan::query()->where('desa_id', $user->desa_id);
+        $tagihanQuery = Tagihan::query()->whereHas('pelanggan', fn ($query) => $query->where('desa_id', $user->desa_id));
+        $pembayaranQuery = Pembayaran::query()->whereHas('tagihan.pelanggan', fn ($query) => $query->where('desa_id', $user->desa_id));
         $gangguanQuery = ActivityLog::where(function ($query) {
             $query->where('action', 'like', '%gangguan%')
                 ->orWhere('description', 'like', '%gangguan%')
                 ->orWhere('action', 'like', '%anomali%');
-        });
-
-        if (! $user->isRoot()) {
-            $pelangganQuery->where('desa_id', $user->desa_id);
-            $tagihanQuery->whereHas('pelanggan', fn ($query) => $query->where('desa_id', $user->desa_id));
-            $pembayaranQuery->whereHas('tagihan.pelanggan', fn ($query) => $query->where('desa_id', $user->desa_id));
-            $gangguanQuery->whereHas('user', fn ($query) => $query->where('desa_id', $user->desa_id));
-        }
+        })->whereHas('user', fn ($query) => $query->where('desa_id', $user->desa_id));
 
         return view('dashboard', [
             'user' => $user,
@@ -84,12 +154,25 @@ class DashboardController extends Controller
             'dashboardDescription' => $dashboardDescription,
             'shortcuts' => $shortcuts,
             'totalPelanggan' => $pelangganQuery->count(),
-            'totalTagihan' => $tagihanQuery->count(),
-            'totalPembayaran' => $pembayaranQuery->count(),
-            'totalTunggakan' => (clone $tagihanQuery)->where('status', 'menunggak')->count(),
+            'totalTagihan' => (float) $tagihanQuery->sum('amount'),
+            'totalPembayaran' => (float) $pembayaranQuery->sum('amount'),
+            'totalTunggakan' => (float) (clone $tagihanQuery)->where('status', 'menunggak')->sum('amount'),
             'totalGangguan' => $gangguanQuery->count(),
             'namaUnitPengelola' => $namaUnitPengelola,
             'namaKecamatan' => $namaKecamatan,
+            'isKecamatanDashboard' => false,
+            'jumlahDesaAktif' => null,
+            'totalPemakaianM3' => null,
+            'selectedPeriod' => now()->format('Y-m'),
+            'villageSummaries' => collect(),
+            'chartData' => [
+                ['label' => 'Jan', 'value' => 42],
+                ['label' => 'Feb', 'value' => 55],
+                ['label' => 'Mar', 'value' => 61],
+                ['label' => 'Apr', 'value' => 49],
+                ['label' => 'Mei', 'value' => 74],
+                ['label' => 'Jun', 'value' => 82],
+            ],
         ]);
     }
 }

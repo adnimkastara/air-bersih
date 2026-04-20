@@ -16,13 +16,19 @@ class DistrictBilling extends Model
         'tarif_id',
         'tarif_per_m3',
         'total_setoran',
+        'paid_amount',
         'status',
+        'payment_status',
+        'paid_at',
+        'payment_method',
+        'payment_notes',
         'due_date',
         'generated_at',
     ];
 
     protected $casts = [
         'due_date' => 'date',
+        'paid_at' => 'date',
         'generated_at' => 'datetime',
     ];
 

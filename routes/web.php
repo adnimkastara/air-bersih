@@ -60,6 +60,10 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/tarif', [TarifController::class, 'index'])->name('tarif.index');
         Route::post('/tarif/desa', [TarifController::class, 'storeDesa'])->name('tarif.store-desa');
+    });
+
+    Route::prefix('settings')->name('settings.')->middleware('role:root')->group(function () {
+        Route::get('/tarif/kecamatan', [TarifController::class, 'kecamatan'])->name('tarif.kecamatan');
         Route::post('/tarif/kecamatan', [TarifController::class, 'storeKecamatan'])->name('tarif.store-kecamatan');
     });
 
@@ -77,13 +81,16 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:root,admin_desa')->group(function () {
         Route::get('/district-billings', [DistrictBillingController::class, 'index'])->name('district-billings.index');
+        Route::get('/district-billings/payments', [DistrictBillingController::class, 'payments'])->name('district-billings.payments');
         Route::post('/district-billings/generate', [DistrictBillingController::class, 'generate'])->name('district-billings.generate');
+        Route::post('/district-billings/{districtBilling}/payment', [DistrictBillingController::class, 'recordPayment'])->name('district-billings.record-payment');
     });
 
 Route::middleware('role:root,admin_desa,petugas_lapangan')->group(function () {
         Route::resource('pelanggan', PelangganController::class);
         Route::get('/tagihan', [TagihanController::class, 'index'])->name('tagihan.index');
         Route::get('/tagihan/{tagihan}', [TagihanController::class, 'show'])->name('tagihan.show');
+        Route::get('/tagihan/{tagihan}/print', [TagihanController::class, 'print'])->name('tagihan.print');
         Route::post('/tagihan/generate', [TagihanController::class, 'generate'])->name('tagihan.generate');
         Route::post('/tagihan/{tagihan}/publish', [TagihanController::class, 'publish'])->name('tagihan.publish');
 

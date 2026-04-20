@@ -8,7 +8,7 @@ use App\Models\LaporanGangguan;
 use App\Models\Pelanggan;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
-use App\Support\SimplePdfExporter;
+use App\Models\AppSetting;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -54,7 +54,7 @@ class LaporanController extends Controller
         ])['report'];
 
         $reports = $this->buildReports($filters);
-        $rows = $reports[$report];
+        $setting = AppSetting::resolveForUser($request->user());
 
         $labels = [
             'pelanggan' => 'Laporan Pelanggan',
@@ -66,31 +66,16 @@ class LaporanController extends Controller
             'setoran_kecamatan' => 'Laporan Setoran Desa ke Kecamatan',
         ];
 
-        $lines = [
-            $labels[$report],
-            'Tanggal cetak: ' . now()->format('Y-m-d H:i'),
-            'Filter tanggal: ' . ($filters['date_from'] ?? '-') . ' s/d ' . ($filters['date_to'] ?? '-'),
-            'Filter desa_id: ' . ($filters['desa_id'] ?? '-'),
-            str_repeat('-', 95),
-        ];
-
-        foreach ($rows as $row) {
-            $lines[] = collect($row)->map(function ($value) {
-                return is_scalar($value) ? (string) $value : '-';
-            })->implode(' | ');
-        }
-
-        if (count($rows) === 0) {
-            $lines[] = 'Tidak ada data untuk filter yang dipilih.';
-        }
-
-        $pdfContent = SimplePdfExporter::fromLines($lines);
-        $filename = sprintf('laporan-%s-%s.pdf', $report, now()->format('YmdHis'));
-
-        return response($pdfContent)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+        return response()->view('laporan.exports.pdf', [
+            'report' => $report,
+            'title' => $labels[$report],
+            'rows' => $reports[$report],
+            'filters' => $filters,
+            'setting' => $setting,
+            'printedAt' => now(),
+        ]);
     }
+
 
 
     private function applyRoleFilter(Request $request, array $filters): array
@@ -272,7 +257,12 @@ class LaporanController extends Controller
                 'total_pemakaian_m3' => (int) $item->total_usage_m3,
                 'tarif_kecamatan_per_m3' => (float) $item->tarif_per_m3,
                 'total_setoran' => (float) $item->total_setoran,
-                'status' => $item->status,
+                'status_tagihan' => $item->status,
+                'status_pembayaran' => $item->payment_status,
+                'total_pembayaran' => (float) $item->paid_amount,
+                'sisa_tunggakan' => (float) ($item->total_setoran - $item->paid_amount),
+                'tanggal_bayar' => $item->paid_at?->format('Y-m-d'),
+                'metode_bayar' => $item->payment_method,
                 'jatuh_tempo' => $item->due_date?->format('Y-m-d'),
             ])
             ->all();

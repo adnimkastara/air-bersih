@@ -36,7 +36,8 @@
                 <a href="{{ route('pelanggan.index') }}"><i class="bi bi-people"></i> Pelanggan</a>
                 <a href="{{ route('tagihan.index') }}"><i class="bi bi-receipt"></i> Tagihan</a>
                 @if($user?->isRoot() || $user?->isAdminDesa())
-                    <a href="{{ route('district-billings.index') }}"><i class="bi bi-building"></i> Setoran Kecamatan</a>
+                    <a href="{{ route('district-billings.index') }}"><i class="bi bi-building"></i> Tagihan Kecamatan</a>
+                    <a href="{{ route('district-billings.payments') }}"><i class="bi bi-bank"></i> Pembayaran Kecamatan</a>
                 @endif
                 <a href="{{ route('meter_records.index') }}"><i class="bi bi-speedometer"></i> Meter Record</a>
                 <a href="{{ route('pembayaran.index') }}"><i class="bi bi-cash-stack"></i> Pembayaran</a>
