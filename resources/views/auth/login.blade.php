@@ -4,18 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | {{ $branding['app_name'] }}</title>
-    <meta name="theme-color" content="{{ $branding['theme_color'] }}">
-    <link rel="icon" href="{{ $branding['favicon_url'] }}">
+    <meta name="theme-color" content="{{ $branding['primary_color'] }}">
+    @if(!empty($branding['favicon_url']))
+        <link rel="icon" href="{{ $branding['favicon_url'] }}">
+    @endif
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     <style>
-        :root { --primary: {{ $branding['theme_color'] }}; --line:#dbe4f0; --muted:#64748b; --text:#0f172a; }
+        :root { --primary: {{ $branding['primary_color'] }}; --secondary: {{ $branding['secondary_color'] }}; --line:#dbe4f0; --muted:#64748b; --text:#0f172a; }
         * { box-sizing: border-box; }
-        body { margin:0; min-height:100vh; display:grid; place-items:center; padding:20px; font-family:'Inter',sans-serif; color:var(--text); background:#f1f5f9; }
-        .card { width:min(430px, 100%); background:#fff; border:1px solid var(--line); border-radius:16px; padding:26px; box-shadow:0 18px 45px rgba(15,23,42,.08); }
+        body { margin:0; min-height:100vh; display:grid; place-items:center; padding:20px; font-family:'Inter',sans-serif; color:var(--text); background:radial-gradient(circle at 20% 20%, rgba(20,184,166,.26), transparent 42%),radial-gradient(circle at 80% 5%, rgba(59,130,246,.25), transparent 34%),linear-gradient(135deg, #0c4a6e 0%, #1d4ed8 48%, #0ea5e9 100%); }
+        .card { width:min(430px, 100%); background:#fff; border:1px solid rgba(255,255,255,.45); border-radius:16px; padding:26px; box-shadow:0 18px 45px rgba(15,23,42,.2); backdrop-filter: blur(3px); }
         .brand { text-align:center; margin-bottom:18px; }
         .brand img { max-height:72px; width:auto; object-fit:contain; }
-        .brand-mark { width:64px; height:64px; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:800; background:var(--primary); }
+        .brand-mark { width:64px; height:64px; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:800; background:linear-gradient(135deg, var(--primary), var(--secondary)); }
         h1 { margin:12px 0 4px; font-size:1.4rem; }
         p { margin:0; color:var(--muted); font-size:.92rem; }
         label { display:block; font-size:.88rem; margin-bottom:6px; color:#334155; }
@@ -34,7 +36,7 @@
                 <span class="brand-mark">{{ $branding['initials'] }}</span>
             @endif
             <h1>{{ $branding['app_name'] }}</h1>
-            <p>{{ $branding['subtitle'] }}</p>
+            <p>{{ $branding['app_subtitle'] }}</p>
         </div>
 
         @if($errors->any())

@@ -1,7 +1,7 @@
 <aside class="sidebar">
     <div class="brand">
-        @if(!empty($branding['logo_url']))
-            <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['app_name'] }}" class="brand-logo" loading="lazy">
+        @if(!empty($branding['logo_icon_url']))
+            <img src="{{ $branding['logo_icon_url'] }}" alt="Logo {{ $branding['app_name'] }}" class="brand-logo" loading="lazy">
         @else
             <span class="brand-fallback-mark">{{ $branding['initials'] }}</span>
         @endif

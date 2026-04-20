@@ -9,8 +9,8 @@
     ])
     @include('layouts.partials.alerts')
     @php
-        $logoUrl = filled($setting->logo_path) ? asset('storage/' . ltrim($setting->logo_path, '/')) : null;
-        $faviconUrl = filled($setting->favicon_path) ? asset('storage/' . ltrim($setting->favicon_path, '/')) : null;
+        $logoUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->logo_path, 'assets/logo/logo-main.svg');
+        $faviconUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->favicon_path, 'favicon.ico');
         $logoIconUrl = $logoUrl;
     @endphp
 
