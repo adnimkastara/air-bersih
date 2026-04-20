@@ -1,0 +1,2 @@
+-dontwarn okio.**
+-keep class com.airbersih.mobile.model.** { *; }
