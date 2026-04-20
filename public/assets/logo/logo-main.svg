@@ -1,0 +1,8 @@
+<svg width="640" height="180" viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tirta Sejahtera">
+  <rect width="640" height="180" fill="none"/>
+  <rect x="20" y="26" width="128" height="128" rx="24" fill="#F0F9FF"/>
+  <path d="M36 116C58 146 104 146 132 114" stroke="#0E7490" stroke-width="18" fill="none" stroke-linecap="round"/>
+  <path d="M34 130C60 158 108 158 136 126" stroke="#0D9488" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="M92 44L126 66L88 82Z" fill="#22C55E"/>
+  <text x="180" y="88" fill="#0F172A" font-size="44" font-family="Inter, Arial, sans-serif" font-weight="700">Tirta Sejahtera</text>
+</svg>
