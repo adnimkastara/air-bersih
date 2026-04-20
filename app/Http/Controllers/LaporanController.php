@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Desa;
+use App\Models\DistrictBilling;
 use App\Models\LaporanGangguan;
 use App\Models\Pelanggan;
 use App\Models\Pembayaran;
@@ -30,7 +31,7 @@ class LaporanController extends Controller
     {
         $filters = $this->applyRoleFilter($request, $this->validateFilters($request));
         $report = $request->validate([
-            'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan'],
+            'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan,setoran_kecamatan'],
         ])['report'];
 
         $reports = $this->buildReports($filters);
@@ -49,7 +50,7 @@ class LaporanController extends Controller
     {
         $filters = $this->applyRoleFilter($request, $this->validateFilters($request));
         $report = $request->validate([
-            'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan'],
+            'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan,setoran_kecamatan'],
         ])['report'];
 
         $reports = $this->buildReports($filters);
@@ -62,6 +63,7 @@ class LaporanController extends Controller
             'tunggakan' => 'Laporan Tunggakan',
             'gangguan' => 'Laporan Gangguan',
             'keuangan' => 'Laporan Keuangan Sederhana',
+            'setoran_kecamatan' => 'Laporan Setoran Desa ke Kecamatan',
         ];
 
         $lines = [
@@ -256,6 +258,25 @@ class LaporanController extends Controller
             })
             ->all();
 
+
+        $setoranKecamatanRows = DistrictBilling::query()
+            ->with('desa')
+            ->when($filters['desa_id'] ?? null, fn (Builder $query, $desaId) => $query->where('desa_id', $desaId))
+            ->when($filters['date_from'] ?? null, fn (Builder $query, $dateFrom) => $query->whereDate('created_at', '>=', $dateFrom))
+            ->when($filters['date_to'] ?? null, fn (Builder $query, $dateTo) => $query->whereDate('created_at', '<=', $dateTo))
+            ->orderByDesc('period')
+            ->get()
+            ->map(fn (DistrictBilling $item) => [
+                'desa' => $item->desa?->name,
+                'periode' => $item->period,
+                'total_pemakaian_m3' => (int) $item->total_usage_m3,
+                'tarif_kecamatan_per_m3' => (float) $item->tarif_per_m3,
+                'total_setoran' => (float) $item->total_setoran,
+                'status' => $item->status,
+                'jatuh_tempo' => $item->due_date?->format('Y-m-d'),
+            ])
+            ->all();
+
         return [
             'pelanggan' => $pelangganRows,
             'tagihan' => $tagihanRows,
@@ -263,6 +284,7 @@ class LaporanController extends Controller
             'tunggakan' => $tunggakanRows,
             'gangguan' => $gangguanRows,
             'keuangan' => $keuanganRows,
+            'setoran_kecamatan' => $setoranKecamatanRows,
         ];
     }
 }

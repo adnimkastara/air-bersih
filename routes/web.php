@@ -12,6 +12,8 @@ use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TagihanController;
+use App\Http\Controllers\DistrictBillingController;
+use App\Http\Controllers\Settings\TarifController;
 use App\Http\Controllers\Settings\AppSettingController;
 use App\Http\Controllers\Settings\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -55,6 +57,10 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/app', [AppSettingController::class, 'edit'])->name('app.edit');
         Route::put('/app', [AppSettingController::class, 'update'])->name('app.update');
+
+        Route::get('/tarif', [TarifController::class, 'index'])->name('tarif.index');
+        Route::post('/tarif/desa', [TarifController::class, 'storeDesa'])->name('tarif.store-desa');
+        Route::post('/tarif/kecamatan', [TarifController::class, 'storeKecamatan'])->name('tarif.store-kecamatan');
     });
 
     Route::middleware('role:root,admin_desa')->group(function () {
@@ -66,6 +72,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/export/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.export.pdf');
         Route::get('/laporan/export/excel', [LaporanController::class, 'exportExcel'])->name('laporan.export.excel');
+    });
+
+
+    Route::middleware('role:root,admin_desa')->group(function () {
+        Route::get('/district-billings', [DistrictBillingController::class, 'index'])->name('district-billings.index');
+        Route::post('/district-billings/generate', [DistrictBillingController::class, 'generate'])->name('district-billings.generate');
     });
 
 Route::middleware('role:root,admin_desa,petugas_lapangan')->group(function () {

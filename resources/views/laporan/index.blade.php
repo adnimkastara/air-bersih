@@ -9,10 +9,10 @@
 <div><label>Desa</label><select name="desa_id"><option value="">Semua Desa</option>@foreach($desas as $desa)<option value="{{ $desa->id }}" @selected(($filters['desa_id'] ?? null) == $desa->id)>{{ $desa->name }}</option>@endforeach</select></div>
 <div style="display:flex;gap:8px;"><button type="submit" class="btn btn-primary">Terapkan</button><a href="{{ route('laporan.index') }}" class="btn btn-outline">Reset</a></div>
 </form>
-<p class="muted">Laporan tersedia: pelanggan, tagihan, pembayaran, tunggakan, gangguan, keuangan.</p>
+<p class="muted">Laporan tersedia: pelanggan, tagihan, pembayaran, tunggakan, gangguan, keuangan, setoran kecamatan.</p>
 </div>
 
-@php $titles = ['pelanggan' => 'Laporan Pelanggan','tagihan' => 'Laporan Tagihan','pembayaran' => 'Laporan Pembayaran','tunggakan' => 'Laporan Tunggakan','gangguan' => 'Laporan Gangguan','keuangan' => 'Laporan Keuangan Sederhana']; @endphp
+@php $titles = ['pelanggan' => 'Laporan Pelanggan','tagihan' => 'Laporan Tagihan','pembayaran' => 'Laporan Pembayaran','tunggakan' => 'Laporan Tunggakan','gangguan' => 'Laporan Gangguan','keuangan' => 'Laporan Keuangan Sederhana','setoran_kecamatan' => 'Laporan Setoran Desa ke Kecamatan']; @endphp
 @foreach($titles as $key => $title)
 <div class="card">
 <div class="page-header" style="margin-bottom:10px;"><div><h3 style="margin:0;">{{ $title }}</h3></div><div style="display:flex;gap:8px;"><a class="btn btn-outline btn-sm" href="{{ route('laporan.export.pdf', array_merge($filters, ['report' => $key])) }}">Export PDF</a><a class="btn btn-primary btn-sm" href="{{ route('laporan.export.excel', array_merge($filters, ['report' => $key])) }}">Export Excel</a></div></div>

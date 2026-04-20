@@ -100,13 +100,37 @@ class DatabaseSeeder extends Seeder
             'assigned_petugas_id' => $petugas->id,
         ]);
 
-        $tarifRumahTangga = Tarif::firstOrCreate([
-            'name' => 'Tarif Rumah Tangga',
-            'customer_type' => 'rumah_tangga',
+        $tarifRumahTangga = Tarif::updateOrCreate([
+            'name' => 'Tarif Rumah Tangga Desa Satu',
+            'scope_type' => Tarif::SCOPE_DESA,
+            'village_id' => $desa->id,
         ], [
+            'customer_type' => 'rumah_tangga',
+            'category' => 'rumah_tangga',
+            'abonemen' => 5000,
+            'tarif_dasar' => 10000,
+            'tarif_per_m3' => 1500,
             'base_rate' => 10000,
             'usage_rate' => 1500,
             'late_fee_per_day' => 2000,
+            'status' => 'aktif',
+            'is_active' => true,
+            'effective_start' => Carbon::now()->startOfYear()->toDateString(),
+        ]);
+
+        Tarif::updateOrCreate([
+            'name' => 'Tarif Setoran Kecamatan',
+            'scope_type' => Tarif::SCOPE_KECAMATAN,
+        ], [
+            'customer_type' => 'desa',
+            'category' => 'desa',
+            'abonemen' => 0,
+            'tarif_dasar' => 0,
+            'tarif_per_m3' => 600,
+            'base_rate' => 0,
+            'usage_rate' => 600,
+            'late_fee_per_day' => 0,
+            'status' => 'aktif',
             'is_active' => true,
             'effective_start' => Carbon::now()->startOfYear()->toDateString(),
         ]);
@@ -127,12 +151,12 @@ class DatabaseSeeder extends Seeder
         ], [
             'meter_record_id' => $meterRecord->id,
             'tarif_id' => $tarifRumahTangga->id,
-            'amount' => 75000,
+            'amount' => 90000,
             'status' => 'terbit',
             'due_date' => Carbon::now()->addDays(10)->toDateString(),
             'usage_m3' => 50,
-            'base_amount' => 10000,
-            'usage_amount' => 65000,
+            'base_amount' => 15000,
+            'usage_amount' => 75000,
             'late_fee' => 0,
             'generated_at' => now(),
         ]);
@@ -142,7 +166,7 @@ class DatabaseSeeder extends Seeder
             'paid_at' => Carbon::now()->toDateString(),
         ], [
             'petugas_id' => $petugas->id,
-            'amount' => 75000,
+            'amount' => 90000,
             'notes' => 'Pembayaran contoh lunas di loket desa.',
         ]);
     }

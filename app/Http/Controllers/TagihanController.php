@@ -14,7 +14,9 @@ class TagihanController extends Controller
     {
         $this->refreshLateFees($request);
 
-        $tarifQuery = Tarif::orderByDesc('is_active')->orderBy('customer_type')->orderBy('name');
+        $tarifQuery = Tarif::with('desa')->where('scope_type', Tarif::SCOPE_DESA)
+            ->when(! $request->user()->isRoot(), fn ($query) => $query->where('village_id', $request->user()->desa_id))
+            ->orderByDesc('status')->orderBy('category')->orderBy('name');
         $tagihanQuery = Tagihan::with(['pelanggan', 'meterRecord', 'tarif'])
             ->orderByDesc('period')
             ->orderByDesc('created_at');
@@ -81,10 +83,11 @@ class TagihanController extends Controller
             }
 
             $usage = max(0, (int) ($record->meter_current_month - $record->meter_previous_month));
-            $baseAmount = (float) $tarif->base_rate;
-            $usageAmount = $usage * (float) $tarif->usage_rate;
+            $abonemenAmount = (float) $tarif->abonemen;
+            $baseAmount = (float) $tarif->tarif_dasar;
+            $usageAmount = $usage * (float) $tarif->tarif_per_m3;
             $lateFee = 0;
-            $totalAmount = $baseAmount + $usageAmount + $lateFee;
+            $totalAmount = $abonemenAmount + $baseAmount + $usageAmount + $lateFee;
 
             Tagihan::create([
                 'pelanggan_id' => $record->pelanggan_id,
@@ -95,7 +98,7 @@ class TagihanController extends Controller
                 'due_date' => $monthEnd->copy()->addDays(10),
                 'period' => $period->format('Y-m'),
                 'usage_m3' => $usage,
-                'base_amount' => $baseAmount,
+                'base_amount' => $abonemenAmount + $baseAmount,
                 'usage_amount' => $usageAmount,
                 'late_fee' => $lateFee,
                 'generated_at' => now(),
