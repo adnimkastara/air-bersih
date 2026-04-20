@@ -3,9 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ @yield('title', 'Admin') }} | {{ $branding['app_name'] ?? 'Tirta Sejahtera' }}</title>
-    <meta name="theme-color" content="{{ $branding['theme_color'] ?? '#1d4ed8' }}">
-    <link rel="icon" href="{{ $branding['favicon_url'] ?? asset('favicon.ico') }}">
+    @php
+        $brandingData = $branding ?? [];
+        $pageTitle = trim($__env->yieldContent('title', 'Admin'));
+        $appName = data_get($brandingData, 'app_name', 'Tirta Sejahtera');
+        $themeColor = data_get($brandingData, 'theme_color', '#1d4ed8');
+        $favicon = data_get($brandingData, 'favicon_url') ?: asset('favicon.ico');
+    @endphp
+    <title>{{ $pageTitle }} | {{ $appName }}</title>
+    <meta name="theme-color" content="{{ $themeColor }}">
+    <link rel="icon" href="{{ $favicon }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -16,7 +23,7 @@
             --line:#dbe4f0;
             --text:#0f172a;
             --muted:#64748b;
-            --primary:{{ $branding['theme_color'] ?? '#1d4ed8' }};
+            --primary:{{ $themeColor }};
             --danger:#dc2626;
             --radius:14px;
         }
