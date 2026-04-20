@@ -1,17 +1,11 @@
-@php
-    $iconLogoSvgPath = public_path('assets/logo/logo-icon.svg');
-    $iconLogoUrl = asset('assets/logo/logo-icon.svg');
-    $hasIconLogo = file_exists($iconLogoSvgPath);
-@endphp
-
 <aside class="sidebar">
     <div class="brand">
-        @if($hasIconLogo)
-            <img src="{{ $iconLogoUrl }}" alt="Logo Tirta Sejahtera" class="brand-logo" loading="lazy">
+        @if(!empty($branding['logo_url']))
+            <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['app_name'] }}" class="brand-logo" loading="lazy">
         @else
-            <span class="brand-fallback-mark">TS</span>
+            <span class="brand-fallback-mark">{{ $branding['initials'] }}</span>
         @endif
-        <span class="brand-text">Tirta Sejahtera</span>
+        <span class="brand-text">{{ $branding['app_name'] }}</span>
     </div>
 
     <nav class="menu">

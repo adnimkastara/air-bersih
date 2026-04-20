@@ -1,16 +1,14 @@
-@php
-    $mainLogoSvgPath = public_path('assets/logo/logo-main.svg');
-    $mainLogoUrl = asset('assets/logo/logo-main.svg');
-    $hasMainLogo = file_exists($mainLogoSvgPath);
-@endphp
-
 <div class="topbar">
-    <div class="topbar-brand" aria-label="Brand Tirta Sejahtera">
-        @if($hasMainLogo)
-            <img src="{{ $mainLogoUrl }}" alt="Logo Tirta Sejahtera" class="topbar-logo" loading="lazy">
+    <div class="topbar-brand" aria-label="Brand {{ $branding['app_name'] }}">
+        @if(!empty($branding['logo_url']))
+            <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['app_name'] }}" class="topbar-logo" loading="lazy">
         @else
-            <strong>Tirta Sejahtera</strong>
+            <strong>{{ $branding['app_name'] }}</strong>
         @endif
+        <div>
+            <strong>{{ $branding['app_name'] }}</strong>
+            <div style="font-size:12px;color:#64748b;">{{ $branding['subtitle'] }}</div>
+        </div>
     </div>
 
     <div>{{ $user?->name }} ({{ $user?->role?->name }})</div>

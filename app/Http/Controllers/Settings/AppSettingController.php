@@ -8,6 +8,7 @@ use App\Models\AppSetting;
 use App\Models\Kecamatan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AppSettingController extends Controller
 {
@@ -35,7 +36,24 @@ class AppSettingController extends Controller
             ? AppSetting::getGlobalSetting()
             : AppSetting::getOrCreateDesaSetting($user->desa_id);
 
-        $payload = $request->validated();
+        $payload = $request->safe()->except(['logo', 'favicon']);
+
+        if ($request->hasFile('logo')) {
+            if ($setting->logo_path && Storage::disk('public')->exists($setting->logo_path)) {
+                Storage::disk('public')->delete($setting->logo_path);
+            }
+
+            $payload['logo_path'] = $request->file('logo')->store('branding', 'public');
+        }
+
+        if ($request->hasFile('favicon')) {
+            if ($setting->favicon_path && Storage::disk('public')->exists($setting->favicon_path)) {
+                Storage::disk('public')->delete($setting->favicon_path);
+            }
+
+            $payload['favicon_path'] = $request->file('favicon')->store('branding', 'public');
+        }
+
         $setting->update($payload);
 
         if (! empty($payload['nama_kecamatan'])) {
