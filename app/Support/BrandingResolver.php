@@ -14,6 +14,7 @@ class BrandingResolver
     public const DEFAULT_SUBTITLE = 'Sistem Pengelolaan Air Bersih Desa dan Kecamatan';
     public const DEFAULT_PRIMARY_COLOR = '#1d4ed8';
     public const DEFAULT_SECONDARY_COLOR = '#14b8a6';
+
     private const DEFAULT_LOGO_PATH = 'assets/logo/logo-main.svg';
     private const DEFAULT_LOGO_ICON_PATH = 'assets/logo/logo-icon.svg';
     private const DEFAULT_FAVICON_PATH = 'favicon.ico';
@@ -33,10 +34,10 @@ class BrandingResolver
         return [
             'app_name' => $appName,
             'app_subtitle' => $subtitle,
-            'subtitle' => $subtitle, // backward compatibility for existing blades
+            'subtitle' => $subtitle,
             'primary_color' => $primaryColor,
             'secondary_color' => self::DEFAULT_SECONDARY_COLOR,
-            'theme_color' => $primaryColor, // backward compatibility for existing blades
+            'theme_color' => $primaryColor,
             'logo_url' => $logoUrl,
             'logo_icon_url' => $logoIconUrl,
             'favicon_url' => self::resolveImageUrl($setting?->favicon_path, self::DEFAULT_FAVICON_PATH),
@@ -79,11 +80,14 @@ class BrandingResolver
         }
 
         $normalized = ltrim($normalized, '/');
+
         $candidates = array_values(array_unique([
             $normalized,
             Str::replaceFirst('public/', '', $normalized),
             Str::replaceFirst('storage/', '', $normalized),
-            Str::startsWith($normalized, 'uploads/') ? Str::replaceFirst('uploads/', '', $normalized) : null,
+            Str::startsWith($normalized, 'uploads/')
+                ? Str::replaceFirst('uploads/', '', $normalized)
+                : null,
         ]));
 
         foreach ($candidates as $candidate) {
@@ -105,8 +109,8 @@ class BrandingResolver
                 return asset($candidate);
             }
 
-            if (File::exists(public_path('uploads/'.$candidate))) {
-                return asset('uploads/'.$candidate);
+            if (File::exists(public_path('uploads/' . $candidate))) {
+                return asset('uploads/' . $candidate);
             }
         }
 
@@ -129,7 +133,7 @@ class BrandingResolver
         $words = preg_split('/\s+/', trim($name)) ?: [];
 
         if (count($words) >= 2) {
-            return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
+            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
         }
 
         return strtoupper(substr($name, 0, 2));
