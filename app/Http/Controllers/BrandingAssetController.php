@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BrandingAssetController extends Controller
 {
-    public function show(string $path): Response
+    public function show(string $path): BinaryFileResponse
     {
         $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
 

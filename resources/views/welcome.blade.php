@@ -38,11 +38,13 @@
     <div class="container">
         <header class="nav">
             <a href="/" class="brand">
-                @if(!empty($branding['logo_url']))
-                    <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['app_name'] }}" loading="lazy">
-                @else
-                    <span class="brand-mark">{{ $branding['initials'] }}</span>
-                @endif
+                @include('layouts.partials.brand-media', [
+                    'imageUrl' => $branding['logo_url'] ?? null,
+                    'appName' => $branding['app_name'] ?? null,
+                    'initials' => $branding['initials'] ?? null,
+                    'imgClass' => '',
+                    'fallbackClass' => 'brand-mark',
+                ])
                 <span>
                     <h1>{{ $branding['app_name'] }}</h1>
                     <p>{{ $branding['app_subtitle'] }}</p>

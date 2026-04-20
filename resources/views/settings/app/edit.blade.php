@@ -13,6 +13,9 @@
         $faviconUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->favicon_path, 'favicon.ico');
         $logoIconUrl = $logoUrl;
         $storageLinkExists = \Illuminate\Support\Facades\File::exists(public_path('storage'));
+        $globalBranding = \App\Support\BrandingResolver::resolve($user);
+        $logoOnPublicDisk = $setting->logo_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($setting->logo_path) : false;
+        $faviconOnPublicDisk = $setting->favicon_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($setting->favicon_path) : false;
     @endphp
 
     <div class="card">
@@ -23,6 +26,15 @@
             @else
                 <strong>public/storage tidak ditemukan</strong>. Sistem tetap memakai fallback route <code>/branding-media/*</code> agar logo/favicon upload tetap tampil.
             @endif
+        </div>
+
+
+        <div style="margin-bottom:12px; padding:10px 12px; border-radius:10px; border:1px solid #dbe4f0; background:#f8fafc; color:#334155; font-size:.85rem;">
+            <strong>Audit path branding</strong><br>
+            Logo path DB: <code>{{ $setting->logo_path ?: '-' }}</code> (disk public: <strong>{{ $logoOnPublicDisk ? 'ada' : 'tidak ada' }}</strong>)<br>
+            Favicon path DB: <code>{{ $setting->favicon_path ?: '-' }}</code> (disk public: <strong>{{ $faviconOnPublicDisk ? 'ada' : 'tidak ada' }}</strong>)<br>
+            URL logo aktif: <code>{{ $globalBranding['logo_url'] ?? '-' }}</code><br>
+            URL favicon aktif: <code>{{ $globalBranding['favicon_url'] ?? '-' }}</code>
         </div>
 
         <form method="POST" action="{{ route('settings.app.update') }}" enctype="multipart/form-data" class="grid-2">
@@ -130,7 +142,7 @@
             result.style.color = '#64748b';
 
             try {
-                const response = await fetch(targetUrl, { method: 'HEAD', cache: 'no-store' });
+                const response = await fetch(targetUrl, { method: 'GET', cache: 'no-store' });
                 if (response.ok) {
                     result.textContent = `Berhasil diakses (HTTP ${response.status}).`;
                     result.style.color = '#166534';
