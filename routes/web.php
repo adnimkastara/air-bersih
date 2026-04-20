@@ -83,7 +83,7 @@ Route::middleware('auth')->group(function () {
     });
 
 
-    Route::middleware('role:root,admin_desa')->group(function () {
+    Route::middleware('role:root')->group(function () {
         Route::get('/district-billings', [DistrictBillingController::class, 'index'])->name('district-billings.index');
         Route::get('/district-billings/payments', [DistrictBillingController::class, 'payments'])->name('district-billings.payments');
         Route::post('/district-billings/generate', [DistrictBillingController::class, 'generate'])->name('district-billings.generate');

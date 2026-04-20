@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
 use Illuminate\Http\Request;
@@ -75,11 +76,14 @@ class PembayaranController extends Controller
 
     public function receipt(Request $request, Pembayaran $pembayaran)
     {
-        $pembayaran->load('tagihan.pelanggan', 'petugas');
+        $pembayaran->load('tagihan.pelanggan.desa.kecamatan', 'petugas');
         $this->abortUnlessCanAccessDesa($request, $pembayaran->tagihan?->pelanggan?->desa_id);
+        $setting = AppSetting::resolveForUser($request->user());
 
         return view('pembayaran.receipt', [
             'pembayaran' => $pembayaran,
+            'setting' => $setting,
+            'printedAt' => now(),
         ]);
     }
 }

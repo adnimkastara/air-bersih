@@ -14,6 +14,7 @@
         .grid th{background:#f2f2f2}
         .text-right{text-align:right}
         .signature{margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+        .signature-date{margin-top:28px;font-size:12px}
         .signature .box{text-align:center}.space{height:64px}
         @media print {.no-print{display:none} body{margin:0.5cm}}
     </style>
@@ -26,7 +27,7 @@
         <h2>{{ $setting?->nama_unit_pengelola ?: 'Unit Pengelola Air Bersih Desa' }}</h2>
         <h3>KECAMATAN {{ strtoupper($setting?->nama_kecamatan ?: ($tagihan->pelanggan?->desa?->kecamatan?->name ?? '-')) }}</h3>
         <p>Desa {{ $tagihan->pelanggan?->desa?->name ?? '-' }}</p>
-        <p>{{ $setting?->alamat ?: '-' }} | {{ $setting?->kontak ?: '-' }}</p>
+        <p>{{ $setting?->alamat ?: '-' }}</p>
         <p class="subtle">Identitas Pengelola: {{ $setting?->tipe_pengelola ?: 'Pengelola Air Bersih' }} | Ketua/Direktur: {{ $setting?->nama_ketua_direktur ?: '-' }} | Sekretaris: {{ $setting?->nama_sekretaris ?: '-' }} | Bendahara: {{ $setting?->nama_bendahara ?: '-' }}</p>
     </div>
 
@@ -53,18 +54,17 @@
         </tbody>
     </table>
 
+    <div class="signature-date">{{ $tagihan->pelanggan?->desa?->name ?? '-' }}, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
     <div class="signature">
         <div class="box">
-            <div>{{ $tagihan->pelanggan?->desa?->name ?? '-' }}, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
-            <div>Bendahara</div>
-            <div class="space"></div>
-            <div><strong>{{ $setting?->nama_bendahara ?: '(...................................)' }}</strong></div>
-        </div>
-        <div class="box">
-            <div>&nbsp;</div>
             <div>Ketua / Direktur</div>
             <div class="space"></div>
             <div><strong>{{ $setting?->nama_ketua_direktur ?: '(...................................)' }}</strong></div>
+        </div>
+        <div class="box">
+            <div>Bendahara</div>
+            <div class="space"></div>
+            <div><strong>{{ $setting?->nama_bendahara ?: '(...................................)' }}</strong></div>
         </div>
     </div>
 </div>

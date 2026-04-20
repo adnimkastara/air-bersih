@@ -16,8 +16,19 @@ use Illuminate\Support\Str;
 
 class LaporanController extends Controller
 {
+    private const REPORT_LABELS = [
+        'pelanggan' => 'Laporan Pelanggan',
+        'tagihan' => 'Laporan Tagihan',
+        'pembayaran' => 'Laporan Pembayaran',
+        'tunggakan' => 'Laporan Tunggakan',
+        'gangguan' => 'Laporan Gangguan',
+        'keuangan' => 'Laporan Keuangan Sederhana',
+        'setoran_kecamatan' => 'Laporan Setoran Desa ke Kecamatan',
+    ];
+
     public function index(Request $request)
     {
+        $availableReports = $this->availableReportKeys($request);
         $filters = $this->normalizeFilters(
             $this->applyRoleFilter($request, $this->validateFilters($request))
         );
@@ -27,14 +38,14 @@ class LaporanController extends Controller
             'filters' => $filters,
             'desas' => Desa::orderBy('name')->get(),
             'reports' => $reports,
+            'titles' => collect(self::REPORT_LABELS)->only($availableReports)->all(),
         ]);
     }
 
     public function exportExcel(Request $request)
     {
-        $report = $request->validate([
-            'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan,setoran_kecamatan'],
-        ])['report'];
+        $report = $request->validate(['report' => ['required', 'string']])['report'];
+        $this->authorizeReportAccess($request, $report);
         $filters = $this->normalizeFilters(
             $this->applyRoleFilter($request, $this->validateFilters($request)),
             $report
@@ -54,32 +65,20 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $report = $request->validate([
-            'report' => ['required', 'in:pelanggan,tagihan,pembayaran,tunggakan,gangguan,keuangan,setoran_kecamatan'],
-        ])['report'];
+        $report = $request->validate(['report' => ['required', 'string']])['report'];
+        $this->authorizeReportAccess($request, $report);
         $filters = $this->normalizeFilters(
             $this->applyRoleFilter($request, $this->validateFilters($request)),
             $report
         );
 
         $reports = $this->buildReports($filters);
-        $setting = AppSetting::resolveForUser($request->user());
-
-        $labels = [
-            'pelanggan' => 'Laporan Pelanggan',
-            'tagihan' => 'Laporan Tagihan',
-            'pembayaran' => 'Laporan Pembayaran',
-            'tunggakan' => 'Laporan Tunggakan',
-            'gangguan' => 'Laporan Gangguan',
-            'keuangan' => 'Laporan Keuangan Sederhana',
-            'setoran_kecamatan' => 'Laporan Setoran Desa ke Kecamatan',
-        ];
-
-        $exportMeta = $this->buildExportMeta($filters, $report, $labels[$report]);
+        $setting = $this->resolveSettingForExport($request, $report, $filters);
+        $exportMeta = $this->buildExportMeta($filters, $report, self::REPORT_LABELS[$report]);
 
         return response()->view('laporan.exports.pdf', [
             'report' => $report,
-            'title' => $labels[$report],
+            'title' => self::REPORT_LABELS[$report],
             'rows' => $reports[$report],
             'filters' => $filters,
             'exportMeta' => $exportMeta,
@@ -88,7 +87,40 @@ class LaporanController extends Controller
         ]);
     }
 
+    private function availableReportKeys(Request $request): array
+    {
+        $reports = array_keys(self::REPORT_LABELS);
 
+        if (! $request->user()->isRoot()) {
+            return array_values(array_filter($reports, fn (string $report) => $report !== 'setoran_kecamatan'));
+        }
+
+        return $reports;
+    }
+
+    private function authorizeReportAccess(Request $request, string $report): void
+    {
+        if (! array_key_exists($report, self::REPORT_LABELS)) {
+            abort(404);
+        }
+
+        if ($report === 'setoran_kecamatan' && ! $request->user()->isRoot()) {
+            abort(403, 'Anda tidak memiliki akses ke laporan level kecamatan.');
+        }
+    }
+
+    private function resolveSettingForExport(Request $request, string $report, array $filters): ?AppSetting
+    {
+        if ($request->user()->isRoot() && $report !== 'setoran_kecamatan' && ! empty($filters['desa_id'])) {
+            $desaSetting = AppSetting::where('scope_key', AppSetting::scopeKeyForDesa((int) $filters['desa_id']))->first();
+
+            if ($desaSetting) {
+                return $desaSetting;
+            }
+        }
+
+        return AppSetting::resolveForUser($request->user());
+    }
 
     private function applyRoleFilter(Request $request, array $filters): array
     {
@@ -284,39 +316,56 @@ class LaporanController extends Controller
             ])
             ->all();
 
-        $keuanganRows = Desa::query()
-            ->when($filters['desa_id'] ?? null, fn (Builder $query, $desaId) => $query->where('id', $desaId))
-            ->with(['pelanggans.tagihans', 'pelanggans.tagihans.pembayarans'])
+        $keuanganRows = Pelanggan::query()
+            ->with([
+                'tagihans' => function ($query) use ($filters) {
+                    $query->with(['meterRecord.petugas', 'pembayarans.petugas'])
+                        ->when($filters['date_from'] ?? null, function (Builder $builder, $dateFrom) {
+                            $builder->where(function (Builder $inner) use ($dateFrom) {
+                                $inner->whereDate('due_date', '>=', $dateFrom)
+                                    ->orWhereDate('created_at', '>=', $dateFrom);
+                            });
+                        })
+                        ->when($filters['date_to'] ?? null, function (Builder $builder, $dateTo) {
+                            $builder->where(function (Builder $inner) use ($dateTo) {
+                                $inner->whereDate('due_date', '<=', $dateTo)
+                                    ->orWhereDate('created_at', '<=', $dateTo);
+                            });
+                        })
+                        ->orderByDesc('period')
+                        ->orderByDesc('id');
+                },
+            ])
+            ->when($filters['desa_id'] ?? null, fn (Builder $query, $desaId) => $query->where('desa_id', $desaId))
             ->orderBy('name')
             ->get()
-            ->map(function (Desa $desa) use ($filters) {
-                $tagihans = $desa->pelanggans->flatMap->tagihans;
-
-                if (! empty($filters['date_from'])) {
-                    $tagihans = $tagihans->filter(function (Tagihan $tagihan) use ($filters) {
-                        return ($tagihan->due_date?->toDateString() ?? $tagihan->created_at->toDateString()) >= $filters['date_from'];
-                    });
-                }
-
-                if (! empty($filters['date_to'])) {
-                    $tagihans = $tagihans->filter(function (Tagihan $tagihan) use ($filters) {
-                        return ($tagihan->due_date?->toDateString() ?? $tagihan->created_at->toDateString()) <= $filters['date_to'];
-                    });
-                }
-
-                $totalTagihan = $tagihans->sum('amount');
-                $totalPembayaran = $tagihans->flatMap->pembayarans->sum('amount');
-                $totalTunggakan = $tagihans->whereIn('status', ['menunggak', 'terbit', 'draft'])->sum('amount');
+            ->map(function (Pelanggan $pelanggan) {
+                $tagihans = $pelanggan->tagihans;
+                $latestTagihan = $tagihans->first();
+                $latestMeter = $latestTagihan?->meterRecord;
+                $totalPemakaian = (float) $tagihans->sum('usage_m3');
+                $totalPembayaran = (float) $tagihans->flatMap->pembayarans->sum('amount');
+                $totalTagihan = (float) $tagihans->sum('amount');
+                $totalTunggakan = max(0, $totalTagihan - $totalPembayaran);
+                $lastPembayaran = $tagihans->flatMap->pembayarans->sortByDesc('paid_at')->first();
+                $petugas = $lastPembayaran?->petugas?->name
+                    ?? $latestMeter?->petugas?->name
+                    ?? '-';
 
                 return [
-                    'desa' => $desa->name,
-                    'jumlah_pelanggan' => $desa->pelanggans->count(),
-                    'total_tagihan' => (float) $totalTagihan,
-                    'total_pembayaran' => (float) $totalPembayaran,
-                    'total_tunggakan' => (float) $totalTunggakan,
-                    'selisih' => (float) ($totalTagihan - $totalPembayaran),
+                    'kode_pelanggan' => $pelanggan->kode_pelanggan ?: '-',
+                    'nama_pelanggan' => $pelanggan->name,
+                    'pemakaian_bulan_lalu' => (float) ($latestMeter?->meter_previous_month ?? 0),
+                    'pemakaian_bulan_ini' => (float) ($latestMeter?->meter_current_month ?? 0),
+                    'total_pemakaian' => $totalPemakaian,
+                    'total_pembayaran' => $totalPembayaran,
+                    'tunggakan' => $totalTunggakan,
+                    'status' => $totalTunggakan <= 0 ? 'Lunas' : 'Tidak Lunas',
+                    'petugas' => $petugas,
                 ];
             })
+            ->filter(fn (array $row) => ! empty($row['nama_pelanggan']))
+            ->values()
             ->all();
 
 
