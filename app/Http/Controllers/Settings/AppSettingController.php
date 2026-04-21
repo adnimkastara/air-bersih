@@ -8,6 +8,7 @@ use App\Models\AppSetting;
 use App\Models\Kecamatan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class AppSettingController extends Controller
@@ -16,6 +17,14 @@ class AppSettingController extends Controller
     {
         $user = $request->user();
         abort_unless($user?->hasAnyRole(['root', 'admin_kecamatan', 'admin_desa']), 403);
+
+        if (! Schema::hasTable('app_settings')) {
+            return view('settings.app.edit', [
+                'setting' => new AppSetting(),
+                'user' => $user,
+                'globalSetting' => new AppSetting(),
+            ]);
+        }
 
         $setting = $user->isKecamatanLevel()
             ? AppSetting::getGlobalSetting()
@@ -31,6 +40,12 @@ class AppSettingController extends Controller
     public function update(UpdateAppSettingRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        if (! Schema::hasTable('app_settings')) {
+            return redirect()
+                ->route('settings.app.edit')
+                ->withErrors(['app_settings' => 'Tabel app_settings belum tersedia. Jalankan migration terlebih dahulu.']);
+        }
 
         $setting = $user->isKecamatanLevel()
             ? AppSetting::getGlobalSetting()

@@ -36,8 +36,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($email.'|'.$request->ip());
         });
 
-        View::composer('*', function ($view) {
-            $view->with('branding', BrandingResolver::resolve(auth()->user()));
-        });
+        if (! $this->app->runningInConsole()) {
+            View::composer('*', function ($view) {
+                $view->with('branding', BrandingResolver::resolve(auth()->user()));
+            });
+        }
     }
 }

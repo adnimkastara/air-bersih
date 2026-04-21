@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('app_settings')) {
+            return;
+        }
+
         Schema::create('app_settings', function (Blueprint $table) {
             $table->id();
             $table->string('scope_type', 20); // global | desa
@@ -16,6 +20,7 @@ return new class extends Migration
             $table->string('nama_kecamatan')->nullable();
             $table->string('nama_unit_pengelola')->nullable();
             $table->string('tipe_pengelola')->nullable();
+            $table->string('official_name')->nullable();
             $table->string('app_name')->nullable();
             $table->string('nama_aplikasi')->nullable();
             $table->string('subjudul_aplikasi')->nullable();

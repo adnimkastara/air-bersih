@@ -17,6 +17,7 @@ class UpdateAppSettingRequest extends FormRequest
             'nama_kecamatan' => ['nullable', 'string', 'max:255'],
             'nama_unit_pengelola' => ['nullable', 'string', 'max:255'],
             'tipe_pengelola' => ['nullable', 'string', 'max:100'],
+            'official_name' => ['nullable', 'string', 'max:255'],
             'nama_aplikasi' => ['nullable', 'string', 'max:255'],
             'subjudul_aplikasi' => ['nullable', 'string', 'max:255'],
             'theme_color' => ['nullable', 'regex:/^#([A-Fa-f0-9]{6})$/'],

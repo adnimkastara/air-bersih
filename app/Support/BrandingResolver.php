@@ -5,8 +5,10 @@ namespace App\Support;
 use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 class BrandingResolver
 {
@@ -21,9 +23,17 @@ class BrandingResolver
 
     public static function resolve(?User $user = null): array
     {
-        $setting = $user
-            ? AppSetting::resolveForUser($user)
-            : AppSetting::where('scope_key', AppSetting::scopeKeyForGlobal())->first();
+        $setting = null;
+
+        if (self::canReadDatabaseSetting()) {
+            try {
+                $setting = $user
+                    ? AppSetting::resolveForUser($user)
+                    : AppSetting::where('scope_key', AppSetting::scopeKeyForGlobal())->first();
+            } catch (Throwable) {
+                $setting = null;
+            }
+        }
 
         $appName = trim((string) ($setting?->nama_aplikasi ?? '')) ?: self::DEFAULT_APP_NAME;
         $subtitle = trim((string) ($setting?->subjudul_aplikasi ?? '')) ?: self::DEFAULT_SUBTITLE;
@@ -138,5 +148,18 @@ class BrandingResolver
         }
 
         return strtoupper(substr($name, 0, 2));
+    }
+
+    private static function canReadDatabaseSetting(): bool
+    {
+        if (app()->runningInConsole()) {
+            return false;
+        }
+
+        try {
+            return Schema::hasTable('app_settings');
+        } catch (Throwable) {
+            return false;
+        }
     }
 }
