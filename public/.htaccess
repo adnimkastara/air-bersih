@@ -4,7 +4,6 @@
     </IfModule>
 
     RewriteEngine On
-    RewriteBase /air-bersih/
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
