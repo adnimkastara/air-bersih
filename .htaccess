@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Hindari rewrite berulang jika URL sudah mengarah ke /public
+    RewriteRule ^public/ - [L]
+
+    # Jika file/folder ada di ./public, layani langsung dari sana
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -d
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Sisanya arahkan ke front controller Laravel
+    RewriteRule ^ public/index.php [L]
+</IfModule>
