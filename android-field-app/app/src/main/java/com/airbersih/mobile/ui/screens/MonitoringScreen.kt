@@ -1,20 +1,45 @@
 package com.airbersih.mobile.ui.screens
 
+import android.content.pm.PackageManager
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.airbersih.mobile.viewmodel.MainViewModel
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
 @Composable
 fun MonitoringScreen(vm: MainViewModel) {
+    val context = LocalContext.current
     val monitoring by vm.monitoring.collectAsState()
 
     LaunchedEffect(Unit) { vm.loadMonitoring() }
+
+    val mapsApiKey = runCatching {
+        val appInfo = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+        appInfo.metaData?.getString("com.google.android.geo.API_KEY").orEmpty()
+    }.getOrDefault("")
+    val isMapConfigValid = mapsApiKey.isNotBlank() && mapsApiKey != "YOUR_GOOGLE_MAPS_API_KEY"
+
+    if (!isMapConfigValid) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Text("Google Maps belum dikonfigurasi. Peta dinonaktifkan agar aplikasi tidak crash.")
+            Text(
+                "Tetap aman: data monitoring API masih dapat dimuat.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        return
+    }
 
     val fallback = monitoring?.fallbackCenter?.let {
         LatLng(it.latitude ?: -6.2, it.longitude ?: 106.8)
