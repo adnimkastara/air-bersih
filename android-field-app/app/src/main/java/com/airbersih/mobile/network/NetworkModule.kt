@@ -1,7 +1,6 @@
 package com.airbersih.mobile.network
 
 import com.airbersih.mobile.BuildConfig
-import com.airbersih.mobile.data.TokenManager
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

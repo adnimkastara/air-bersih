@@ -9,22 +9,41 @@ data class LoginRequest(
 )
 
 data class LoginResponse(
-    val token: String,
+    val message: String? = null,
+    val data: LoginData
+)
+
+data class LoginData(
+    @Json(name = "access_token") val accessToken: String,
     val user: User
+)
+
+data class ApiDataResponse<T>(
+    val data: T
 )
 
 data class User(
     val id: Long,
     val name: String,
     val email: String,
-    val role: String,
-    val desa: String?
+    val role: UserRole? = null,
+    val desa: UserDesa? = null
+)
+
+data class UserRole(
+    val id: Long? = null,
+    val name: String? = null
+)
+
+data class UserDesa(
+    val id: Long? = null,
+    val name: String? = null
 )
 
 data class DashboardSummary(
-    @Json(name = "jumlah_pelanggan") val jumlahPelanggan: Int,
-    @Json(name = "keluhan_aktif") val keluhanAktif: Int,
-    @Json(name = "meter_hari_ini") val meterHariIni: Int
+    @Json(name = "total_pelanggan") val jumlahPelanggan: Int,
+    @Json(name = "total_keluhan_aktif") val keluhanAktif: Int,
+    @Json(name = "total_tagihan_aktif") val meterHariIni: Int
 )
 
 data class Pelanggan(

@@ -11,7 +11,7 @@ class MainRepository(
 ) {
     suspend fun login(email: String, password: String): ResultState<LoginResponse> =
         handleResponse(api.login(LoginRequest(email, password))).also {
-            if (it is ResultState.Success) tokenManager.saveToken(it.data.token)
+            if (it is ResultState.Success) tokenManager.saveToken(it.data.data.accessToken)
         }
 
     suspend fun logout(): ResultState<ApiMessageResponse> {
@@ -20,8 +20,12 @@ class MainRepository(
         return response
     }
 
-    suspend fun me() = handleResponse(api.me())
-    suspend fun dashboard() = handleResponse(api.dashboard())
+    suspend fun me(): ResultState<User> =
+        handleResponse(api.me()) { it.data }
+
+    suspend fun dashboard(): ResultState<DashboardSummary> =
+        handleResponse(api.dashboard()) { it.data }
+
     suspend fun pelanggan(query: String?, desa: String?) = handleResponse(api.pelanggan(query, desa))
     suspend fun pelangganDetail(id: Long) = handleResponse(api.pelangganDetail(id))
     suspend fun createMeter(request: MeterRecordRequest) = handleResponse(api.createMeter(request))
@@ -31,13 +35,19 @@ class MainRepository(
     suspend fun createKeluhan(request: KeluhanRequest) = handleResponse(api.createKeluhan(request))
     suspend fun monitoringMap() = handleResponse(api.monitoringMap())
 
-    private fun <T> handleResponse(response: Response<T>): ResultState<T> {
+    private suspend fun <T> handleResponse(response: Response<T>): ResultState<T> =
+        handleResponse(response) { it }
+
+    private suspend fun <T, R> handleResponse(response: Response<T>, mapper: (T) -> R): ResultState<R> {
         return if (response.isSuccessful) {
-            response.body()?.let { ResultState.Success(it) }
+            response.body()?.let { ResultState.Success(mapper(it)) }
                 ?: ResultState.Error("Respons kosong dari server", response.code())
         } else {
             when (response.code()) {
-                401 -> ResultState.Error("Sesi habis. Silakan login ulang.", 401)
+                401 -> {
+                    tokenManager.clearToken()
+                    ResultState.Error("Sesi habis. Silakan login ulang.", 401)
+                }
                 422 -> ResultState.Error("Validasi gagal. Periksa input.", 422)
                 else -> ResultState.Error("Gagal (${response.code()}) ${response.message()}", response.code())
             }
