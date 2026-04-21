@@ -37,6 +37,10 @@ Route::get('/preview', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.perform');
+
+    // Backward compatibility for older frontend links that still use /auth/login.
+    Route::redirect('/auth/login', '/login', 301);
+    Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])
