@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class AppSetting extends Model
 {
@@ -22,6 +24,7 @@ class AppSetting extends Model
         'nama_kecamatan',
         'nama_unit_pengelola',
         'tipe_pengelola',
+        'official_name',
         'nama_aplikasi',
         'logo_path',
         'logo_icon_path',
@@ -53,6 +56,10 @@ class AppSetting extends Model
 
     public static function getGlobalSetting(): self
     {
+        if (! self::canQueryTable()) {
+            return new self(['scope_type' => self::SCOPE_GLOBAL, 'scope_key' => self::scopeKeyForGlobal()]);
+        }
+
         return self::firstOrCreate(
             ['scope_key' => self::scopeKeyForGlobal()],
             ['scope_type' => self::SCOPE_GLOBAL]
@@ -61,6 +68,14 @@ class AppSetting extends Model
 
     public static function getOrCreateDesaSetting(int|string $desaId): self
     {
+        if (! self::canQueryTable()) {
+            return new self([
+                'scope_type' => self::SCOPE_DESA,
+                'scope_key' => self::scopeKeyForDesa($desaId),
+                'desa_id' => $desaId,
+            ]);
+        }
+
         return self::firstOrCreate(
             ['scope_key' => self::scopeKeyForDesa($desaId)],
             ['scope_type' => self::SCOPE_DESA, 'desa_id' => $desaId]
@@ -69,6 +84,10 @@ class AppSetting extends Model
 
     public static function resolveForUser(User $user): ?self
     {
+        if (! self::canQueryTable()) {
+            return null;
+        }
+
         if ($user->isKecamatanLevel()) {
             return self::where('scope_key', self::scopeKeyForGlobal())->first();
         }
@@ -79,5 +98,14 @@ class AppSetting extends Model
         }
 
         return self::where('scope_key', self::scopeKeyForGlobal())->first();
+    }
+
+    private static function canQueryTable(): bool
+    {
+        try {
+            return Schema::hasTable('app_settings');
+        } catch (Throwable) {
+            return false;
+        }
     }
 }

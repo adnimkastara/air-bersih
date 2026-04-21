@@ -8,19 +8,33 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('laporan_gangguans')) {
+            return;
+        }
+
         Schema::table('laporan_gangguans', function (Blueprint $table) {
             if (! Schema::hasColumn('laporan_gangguans', 'pelapor')) {
-                $table->string('pelapor')->nullable()->after('pelanggan_id');
+                $column = $table->string('pelapor')->nullable();
+                if (Schema::hasColumn('laporan_gangguans', 'pelanggan_id')) {
+                    $column->after('pelanggan_id');
+                }
             }
 
             if (! Schema::hasColumn('laporan_gangguans', 'no_hp')) {
-                $table->string('no_hp')->nullable()->after('pelapor');
+                $column = $table->string('no_hp')->nullable();
+                if (Schema::hasColumn('laporan_gangguans', 'pelapor')) {
+                    $column->after('pelapor');
+                }
             }
         });
     }
 
     public function down(): void
     {
+        if (! Schema::hasTable('laporan_gangguans')) {
+            return;
+        }
+
         Schema::table('laporan_gangguans', function (Blueprint $table) {
             $columns = [];
 
