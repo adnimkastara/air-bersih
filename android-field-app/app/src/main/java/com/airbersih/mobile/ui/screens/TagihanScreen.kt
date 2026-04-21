@@ -21,16 +21,16 @@ fun TagihanScreen(vm: MainViewModel) {
     val items by vm.tagihan.collectAsState()
     LaunchedEffect(Unit) { vm.loadTagihan(null) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(items = items, key = { it.id ?: it.periode.orEmpty() }) { item ->
-            Card {
-                Column(Modifier.padding(12.dp)) {
-                    Text("Periode ${item.periode ?: "-"}")
-                    Text("Nominal Rp${item.nominal ?: 0.0}")
-                    Text("Status ${item.status ?: "-"}")
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        MenuStatusBanner(vm)
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(items = items, key = { it.id ?: it.periode.orEmpty() }) { item ->
+                Card {
+                    Column(Modifier.padding(12.dp)) {
+                        Text("Periode ${item.periode ?: "-"}")
+                        Text("Nominal Rp${item.nominal ?: 0.0}")
+                        Text("Status ${item.status ?: "-"}")
+                    }
                 }
             }
         }

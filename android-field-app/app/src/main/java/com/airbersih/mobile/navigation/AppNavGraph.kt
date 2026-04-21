@@ -1,7 +1,6 @@
 package com.airbersih.mobile.navigation
 
 import android.app.Application
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,7 +18,9 @@ import com.airbersih.mobile.ui.screens.MeterScreen
 import com.airbersih.mobile.ui.screens.MonitoringScreen
 import com.airbersih.mobile.ui.screens.PelangganScreen
 import com.airbersih.mobile.ui.screens.PembayaranScreen
+import com.airbersih.mobile.ui.screens.ProfileScreen
 import com.airbersih.mobile.ui.screens.TagihanScreen
+import com.airbersih.mobile.utils.MenuLogger
 import com.airbersih.mobile.viewmodel.MainViewModel
 
 object Routes {
@@ -32,6 +33,7 @@ object Routes {
     const val Pembayaran = "pembayaran"
     const val Keluhan = "keluhan"
     const val Monitoring = "monitoring"
+    const val Profile = "profile"
 }
 
 @Composable
@@ -45,12 +47,17 @@ fun AppNavGraph(
     val nav = rememberNavController()
     val loggedIn by vm.isLoggedIn.collectAsState()
 
+    fun navigateMenu(menuName: String, route: String) {
+        MenuLogger.nav("menu_clicked=$menuName target_route=$route")
+        nav.navigate(route)
+    }
+
     LaunchedEffect(loggedIn) {
         val target = if (loggedIn) Routes.Dashboard else Routes.Login
         val currentRoute = nav.currentBackStackEntry?.destination?.route
         if (currentRoute == target) return@LaunchedEffect
 
-        Log.d("AppNavGraph", "navigate auth state changed: $currentRoute -> $target")
+        MenuLogger.nav("auth_route_change from=${currentRoute ?: "none"} to=$target")
         nav.navigate(target) {
             popUpTo(nav.graph.startDestinationId) { inclusive = true }
             launchSingleTop = true
@@ -64,22 +71,25 @@ fun AppNavGraph(
         composable(Routes.Loading) { }
         composable(Routes.Login) { LoginScreen(vm) }
         composable(Routes.Dashboard) {
+            MenuLogger.nav("screen_opened=dashboard")
             DashboardScreen(
                 vm,
-                onOpenPelanggan = { nav.navigate(Routes.Pelanggan) },
-                onOpenMeter = { nav.navigate(Routes.Meter) },
-                onOpenTagihan = { nav.navigate(Routes.Tagihan) },
-                onOpenPembayaran = { nav.navigate(Routes.Pembayaran) },
-                onOpenKeluhan = { nav.navigate(Routes.Keluhan) },
-                onOpenMonitoring = { nav.navigate(Routes.Monitoring) },
+                onOpenPelanggan = { navigateMenu("pelanggan", Routes.Pelanggan) },
+                onOpenMeter = { navigateMenu("meter", Routes.Meter) },
+                onOpenTagihan = { navigateMenu("tagihan", Routes.Tagihan) },
+                onOpenPembayaran = { navigateMenu("pembayaran", Routes.Pembayaran) },
+                onOpenKeluhan = { navigateMenu("keluhan", Routes.Keluhan) },
+                onOpenMonitoring = { navigateMenu("monitoring", Routes.Monitoring) },
+                onOpenProfile = { navigateMenu("profile", Routes.Profile) },
                 onLogout = { vm.logout() }
             )
         }
-        composable(Routes.Pelanggan) { PelangganScreen(vm) }
-        composable(Routes.Meter) { MeterScreen(vm) }
-        composable(Routes.Tagihan) { TagihanScreen(vm) }
-        composable(Routes.Pembayaran) { PembayaranScreen(vm) }
-        composable(Routes.Keluhan) { KeluhanScreen(vm) }
-        composable(Routes.Monitoring) { MonitoringScreen(vm) }
+        composable(Routes.Pelanggan) { MenuLogger.nav("screen_opened=pelanggan"); PelangganScreen(vm) }
+        composable(Routes.Meter) { MenuLogger.nav("screen_opened=meter"); MeterScreen(vm) }
+        composable(Routes.Tagihan) { MenuLogger.nav("screen_opened=tagihan"); TagihanScreen(vm) }
+        composable(Routes.Pembayaran) { MenuLogger.nav("screen_opened=pembayaran"); PembayaranScreen(vm) }
+        composable(Routes.Keluhan) { MenuLogger.nav("screen_opened=keluhan"); KeluhanScreen(vm) }
+        composable(Routes.Monitoring) { MenuLogger.nav("screen_opened=monitoring"); MonitoringScreen(vm) }
+        composable(Routes.Profile) { MenuLogger.nav("screen_opened=profile"); ProfileScreen(vm) }
     }
 }
