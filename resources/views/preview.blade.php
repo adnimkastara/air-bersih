@@ -38,7 +38,7 @@
                 <p>Open the app in the browser, register or login, then visit the dashboard.</p>
             </div>
         </div>
-        <a href="{{ url('/') }}" class="button">Back to home</a>
+        <a href="{{ route('home') }}" class="button">Back to home</a>
     </main>
 </body>
 </html>

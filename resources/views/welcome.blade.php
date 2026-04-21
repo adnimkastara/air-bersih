@@ -37,7 +37,7 @@
 <body>
     <div class="container">
         <header class="nav">
-            <a href="/" class="brand">
+            <a href="{{ route('home') }}" class="brand">
                 @include('layouts.partials.brand-media', [
                     'imageUrl' => $branding['logo_url'] ?? null,
                     'appName' => $branding['app_name'] ?? null,
