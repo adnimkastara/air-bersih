@@ -17,7 +17,7 @@ import com.airbersih.mobile.viewmodel.MainViewModel
 fun KeluhanScreen(vm: MainViewModel) {
     var judul by remember { mutableStateOf("") }
     var deskripsi by remember { mutableStateOf("") }
-    var kategori by remember { mutableStateOf("pipa") }
+    var kategori by remember { mutableStateOf("gangguan") }
     var prioritas by remember { mutableStateOf("sedang") }
     val items by vm.keluhan.collectAsState()
 
@@ -30,17 +30,17 @@ fun KeluhanScreen(vm: MainViewModel) {
         item {
             OutlinedTextField(judul, { judul = it }, label = { Text("Judul") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(deskripsi, { deskripsi = it }, label = { Text("Deskripsi") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(kategori, { kategori = it }, label = { Text("Kategori") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(kategori, { kategori = it }, label = { Text("Jenis laporan") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(prioritas, { prioritas = it }, label = { Text("Prioritas") }, modifier = Modifier.fillMaxWidth())
             Button(onClick = { vm.submitKeluhan(judul, deskripsi, kategori, prioritas) }, modifier = Modifier.fillMaxWidth()) {
                 Text("Kirim Keluhan")
             }
         }
-        items(items) { k ->
+        items(items = items, key = { it.id ?: it.judul.orEmpty() }) { k ->
             Card {
                 Column(Modifier.padding(12.dp)) {
-                    Text(k.judul)
-                    Text("${k.kategori} | ${k.prioritas} | ${k.status}")
+                    Text(k.judul ?: "Tanpa judul")
+                    Text("${k.jenisLaporan ?: "-"} | ${k.prioritas ?: "-"} | ${k.statusPenanganan ?: "-"}")
                     Text("Lokasi: ${k.latitude ?: "-"}, ${k.longitude ?: "-"}")
                 }
             }

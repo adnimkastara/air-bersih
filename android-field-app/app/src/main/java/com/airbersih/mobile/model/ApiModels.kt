@@ -10,22 +10,27 @@ data class LoginRequest(
 
 data class LoginResponse(
     val message: String? = null,
-    val data: LoginData
+    val data: LoginData? = null
 )
 
 data class LoginData(
-    @Json(name = "access_token") val accessToken: String,
-    val user: User
+    @Json(name = "access_token") val accessToken: String? = null,
+    val user: User? = null
 )
 
-data class ApiDataResponse<T>(
-    val data: T
+data class ApiEnvelope<T>(
+    val message: String? = null,
+    val data: T? = null
+)
+
+data class ApiPagination<T>(
+    val data: List<T>? = emptyList()
 )
 
 data class User(
-    val id: Long,
-    val name: String,
-    val email: String,
+    val id: Long? = null,
+    val name: String? = null,
+    val email: String? = null,
     val role: UserRole? = null,
     val desa: UserDesa? = null
 )
@@ -41,74 +46,81 @@ data class UserDesa(
 )
 
 data class DashboardSummary(
-    @Json(name = "total_pelanggan") val jumlahPelanggan: Int,
-    @Json(name = "total_keluhan_aktif") val keluhanAktif: Int,
-    @Json(name = "total_tagihan_aktif") val meterHariIni: Int
+    @Json(name = "total_pelanggan") val jumlahPelanggan: Int? = 0,
+    @Json(name = "total_keluhan_aktif") val keluhanAktif: Int? = 0,
+    @Json(name = "total_tagihan_aktif") val tagihanAktif: Int? = 0
 )
 
 data class Pelanggan(
-    val id: Long,
-    @Json(name = "kode_pelanggan") val kodePelanggan: String,
-    val nama: String,
-    val alamat: String,
-    val desa: String,
-    val status: String,
-    val latitude: Double?,
-    val longitude: Double?
+    val id: Long? = null,
+    @Json(name = "kode_pelanggan") val kodePelanggan: String? = null,
+    @Json(name = "name") val nama: String? = null,
+    @Json(name = "address") val alamat: String? = null,
+    @Json(name = "desa_id") val desaId: Long? = null,
+    val status: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 data class MeterRecordRequest(
     @Json(name = "pelanggan_id") val pelangganId: Long,
-    @Json(name = "angka_meter") val angkaMeter: Int,
-    @Json(name = "tanggal_catat") val tanggalCatat: String,
-    val latitude: Double?,
-    val longitude: Double?,
-    @Json(name = "foto_base64") val fotoBase64: String? = null
+    @Json(name = "meter_previous_month") val meterPreviousMonth: Int,
+    @Json(name = "meter_current_month") val meterCurrentMonth: Int,
+    @Json(name = "recorded_at") val recordedAt: String,
+    @Json(name = "gps_latitude") val gpsLatitude: Double? = null,
+    @Json(name = "gps_longitude") val gpsLongitude: Double? = null,
+    @Json(name = "gps_recorded_at") val gpsRecordedAt: String? = null,
+    val notes: String? = null
 )
 
 data class Tagihan(
-    val id: Long,
-    @Json(name = "pelanggan_id") val pelangganId: Long,
-    val periode: String,
-    val nominal: Long,
-    val status: String
+    val id: Long? = null,
+    @Json(name = "pelanggan_id") val pelangganId: Long? = null,
+    @Json(name = "period") val periode: String? = null,
+    @Json(name = "amount") val nominal: Double? = 0.0,
+    val status: String? = null
 )
 
 data class PembayaranRequest(
     @Json(name = "tagihan_id") val tagihanId: Long,
-    val nominal: Long,
-    val metode: String,
-    val tanggal: String,
-    val catatan: String? = null,
-    @Json(name = "bukti_base64") val buktiBase64: String? = null
+    @Json(name = "amount") val amount: Double,
+    @Json(name = "payment_method") val paymentMethod: String,
+    @Json(name = "paid_at") val paidAt: String,
+    @Json(name = "notes") val notes: String? = null
 )
 
 data class Keluhan(
-    val id: Long,
-    val judul: String,
-    val deskripsi: String,
-    val kategori: String,
-    val prioritas: String,
-    val status: String,
-    val latitude: Double?,
-    val longitude: Double?
+    val id: Long? = null,
+    val judul: String? = null,
+    val deskripsi: String? = null,
+    @Json(name = "jenis_laporan") val jenisLaporan: String? = null,
+    val prioritas: String? = null,
+    @Json(name = "status_penanganan") val statusPenanganan: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 data class KeluhanRequest(
     val judul: String,
     val deskripsi: String,
-    val kategori: String,
+    @Json(name = "jenis_laporan") val jenisLaporan: String,
     val prioritas: String,
-    val latitude: Double?,
-    val longitude: Double?,
-    @Json(name = "foto_base64") val fotoBase64: String? = null
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    @Json(name = "no_hp") val noHp: String = "-",
+    val pelapor: String? = null
 )
 
 data class MonitoringMapResponse(
-    @Json(name = "default_center_lat") val defaultCenterLat: Double,
-    @Json(name = "default_center_lng") val defaultCenterLng: Double,
-    val pelanggan: List<Pelanggan>,
-    @Json(name = "keluhan_aktif") val keluhanAktif: List<Keluhan>
+    @Json(name = "user_current_location") val userCurrentLocation: MonitoringLocation? = null,
+    @Json(name = "fallback_center") val fallbackCenter: MonitoringLocation? = null,
+    @Json(name = "pelanggans") val pelanggan: List<Pelanggan> = emptyList(),
+    @Json(name = "keluhans") val keluhanAktif: List<Keluhan> = emptyList()
 )
 
-data class ApiMessageResponse(val message: String)
+data class MonitoringLocation(
+    val latitude: Double? = null,
+    val longitude: Double? = null
+)
+
+data class ApiMessageResponse(val message: String? = null)

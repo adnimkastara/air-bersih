@@ -1,6 +1,7 @@
 package com.airbersih.mobile.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.airbersih.mobile.data.TokenManager
@@ -18,11 +19,10 @@ import java.time.LocalDate
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val tokenManager = TokenManager(app)
+    private var cachedToken: String? = null
     private val api = NetworkModule.apiService { cachedToken }
     private val repository = MainRepository(api, tokenManager)
     private val locationHelper = LocationHelper(app)
-
-    private var cachedToken: String? = null
 
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
@@ -30,8 +30,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _me = MutableStateFlow<User?>(null)
     val me: StateFlow<User?> = _me
 
-    private val _dashboard = MutableStateFlow<DashboardSummary?>(null)
-    val dashboard: StateFlow<DashboardSummary?> = _dashboard
+    private val _dashboard = MutableStateFlow(DashboardSummary())
+    val dashboard: StateFlow<DashboardSummary> = _dashboard
 
     private val _pelanggan = MutableStateFlow<List<Pelanggan>>(emptyList())
     val pelanggan: StateFlow<List<Pelanggan>> = _pelanggan
@@ -52,7 +52,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             cachedToken = tokenManager.tokenFlow.first()
             _isLoggedIn.value = !cachedToken.isNullOrBlank()
-            if (_isLoggedIn.value) refreshInitialData()
+            if (_isLoggedIn.value) {
+                refreshInitialData()
+            }
         }
     }
 
@@ -60,7 +62,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             when (val result = repository.login(email, password)) {
                 is ResultState.Success -> {
-                    cachedToken = result.data.data.accessToken
+                    val token = result.data.data?.accessToken
+                    if (token.isNullOrBlank()) {
+                        _statusMessage.value = "Token login tidak valid."
+                        return@launch
+                    }
+                    cachedToken = token
                     _isLoggedIn.value = true
                     _me.value = result.data.data.user
                     refreshInitialData()
@@ -74,28 +81,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun logout() {
         viewModelScope.launch {
             repository.logout()
-            cachedToken = null
-            _isLoggedIn.value = false
-            _me.value = null
+            resetSessionData()
         }
     }
 
     fun refreshInitialData() {
         viewModelScope.launch {
-            repository.me().let {
-                when (it) {
-                    is ResultState.Success -> _me.value = it.data
-                    is ResultState.Error -> handleUnauthorized(it)
-                    ResultState.Loading -> Unit
-                }
-            }
-            repository.dashboard().let {
-                when (it) {
-                    is ResultState.Success -> _dashboard.value = it.data
-                    is ResultState.Error -> handleUnauthorized(it)
-                    ResultState.Loading -> Unit
-                }
-            }
+            Log.d("MainViewModel", "Refreshing initial data")
+            repository.me().consume(
+                onSuccess = { _me.value = it },
+                onError = { _statusMessage.value = it.message }
+            )
+            repository.dashboard().consume(
+                onSuccess = { _dashboard.value = it },
+                onError = { _statusMessage.value = it.message }
+            )
             loadPelanggan()
             loadKeluhan()
         }
@@ -136,13 +136,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val loc = locationHelper.getCurrentLocationOrNull()
             val request = MeterRecordRequest(
                 pelangganId = pelangganId,
-                angkaMeter = angka,
-                tanggalCatat = tanggal,
-                latitude = loc?.latitude,
-                longitude = loc?.longitude
+                meterPreviousMonth = (angka - 1).coerceAtLeast(0),
+                meterCurrentMonth = angka,
+                recordedAt = tanggal,
+                gpsLatitude = loc?.latitude,
+                gpsLongitude = loc?.longitude,
+                gpsRecordedAt = LocalDate.now().toString()
             )
             when (val result = repository.createMeter(request)) {
-                is ResultState.Success -> _statusMessage.value = result.data.message
+                is ResultState.Success -> _statusMessage.value = result.data.message ?: "Meter record tersimpan."
                 is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
@@ -152,9 +154,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun submitPembayaran(tagihanId: Long, nominal: Long, metode: String, tanggal: String, catatan: String) {
         viewModelScope.launch {
             when (val result = repository.createPembayaran(
-                PembayaranRequest(tagihanId, nominal, metode, tanggal, catatan)
+                PembayaranRequest(
+                    tagihanId = tagihanId,
+                    amount = nominal.toDouble(),
+                    paymentMethod = metode,
+                    paidAt = tanggal,
+                    notes = catatan.ifBlank { null }
+                )
             )) {
-                is ResultState.Success -> _statusMessage.value = result.data.message
+                is ResultState.Success -> _statusMessage.value = result.data.message ?: "Pembayaran tersimpan."
                 is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
@@ -168,14 +176,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 KeluhanRequest(
                     judul = judul,
                     deskripsi = deskripsi,
-                    kategori = kategori,
+                    jenisLaporan = kategori,
                     prioritas = prioritas,
                     latitude = loc?.latitude,
                     longitude = loc?.longitude
                 )
             )) {
                 is ResultState.Success -> {
-                    _statusMessage.value = result.data.message
+                    _statusMessage.value = result.data.message ?: "Keluhan tersimpan."
                     loadKeluhan()
                 }
                 is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
@@ -186,7 +194,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun loadMonitoring() {
         viewModelScope.launch {
-            when (val result = repository.monitoringMap()) {
+            val loc = locationHelper.getCurrentLocationOrNull()
+            when (val result = repository.monitoringMap(loc?.latitude, loc?.longitude)) {
                 is ResultState.Success -> _monitoring.value = result.data
                 is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
@@ -194,21 +203,32 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-
     private fun handleUnauthorized(result: ResultState.Error): Boolean {
         if (result.code == 401) {
-            cachedToken = null
-            _isLoggedIn.value = false
-            _me.value = null
-            _dashboard.value = null
-            _pelanggan.value = emptyList()
-            _tagihan.value = emptyList()
-            _keluhan.value = emptyList()
-            _monitoring.value = null
+            resetSessionData()
             _statusMessage.value = result.message
             return true
         }
         return false
+    }
+
+    private fun resetSessionData() {
+        cachedToken = null
+        _isLoggedIn.value = false
+        _me.value = null
+        _dashboard.value = DashboardSummary()
+        _pelanggan.value = emptyList()
+        _tagihan.value = emptyList()
+        _keluhan.value = emptyList()
+        _monitoring.value = null
+    }
+
+    private fun <T> ResultState<T>.consume(onSuccess: (T) -> Unit, onError: (ResultState.Error) -> Unit) {
+        when (this) {
+            is ResultState.Success -> onSuccess(data)
+            is ResultState.Error -> if (!handleUnauthorized(this)) onError(this)
+            ResultState.Loading -> Unit
+        }
     }
 
     fun clearMessage() {
