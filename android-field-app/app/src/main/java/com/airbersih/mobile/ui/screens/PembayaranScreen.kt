@@ -11,8 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.airbersih.mobile.utils.DateTimeUtils
 import com.airbersih.mobile.viewmodel.MainViewModel
-import java.time.LocalDate
 
 @Composable
 fun PembayaranScreen(vm: MainViewModel) {
@@ -30,7 +30,7 @@ fun PembayaranScreen(vm: MainViewModel) {
             val t = tagihanId.toLongOrNull()
             val n = nominal.toLongOrNull()
             if (t != null && n != null) {
-                vm.submitPembayaran(t, n, metode, LocalDate.now().toString(), catatan)
+                vm.submitPembayaran(t, n, metode, DateTimeUtils.todayIsoDate(), catatan)
             }
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Simpan Pembayaran")
