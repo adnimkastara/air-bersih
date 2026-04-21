@@ -21,7 +21,7 @@
             <a href="{{ route('kecamatan.index') }}"><i class="bi bi-map"></i> Kecamatan</a>
         @endif
 
-        @if($user?->isRoot() || $user?->isAdminDesa() || $user?->isPetugasLapangan())
+        @if($user?->isKecamatanLevel() || $user?->isAdminDesa() || $user?->isPetugasLapangan())
             @if(! $user?->isKecamatanLevel())
                 <a href="{{ route('pelanggan.index') }}"><i class="bi bi-people"></i> Pelanggan</a>
             @endif

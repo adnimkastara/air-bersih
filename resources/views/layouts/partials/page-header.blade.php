@@ -6,6 +6,6 @@
         @endisset
     </div>
     @isset($actions)
-        <div>{{ $actions }}</div>
+        <div>{!! $actions !!}</div>
     @endisset
 </div>

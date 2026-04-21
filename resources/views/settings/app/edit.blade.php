@@ -12,33 +12,10 @@
         $logoUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->logo_path, 'assets/logo/logo-main.svg');
         $logoIconUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->logo_icon_path, 'assets/logo/logo-icon.svg');
         $faviconUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->favicon_path, 'favicon.ico');
-        $storageLinkExists = \Illuminate\Support\Facades\File::exists(public_path('storage'));
         $globalBranding = \App\Support\BrandingResolver::resolve($user);
-        $logoOnPublicDisk = $setting->logo_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($setting->logo_path) : false;
-        $logoIconOnPublicDisk = $setting->logo_icon_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($setting->logo_icon_path) : false;
-        $faviconOnPublicDisk = $setting->favicon_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($setting->favicon_path) : false;
     @endphp
 
     <div class="card">
-        <div style="margin-bottom:12px; padding:10px 12px; border-radius:10px; border:1px solid #dbe4f0; background:#f8fafc; color:#334155; font-size:.85rem;">
-            Status akses file upload:
-            @if($storageLinkExists)
-                <strong>public/storage tersedia</strong>.
-            @else
-                <strong>public/storage tidak ditemukan</strong>. Sistem tetap memakai fallback route <code>/branding-media/*</code> agar logo/favicon upload tetap tampil.
-            @endif
-        </div>
-
-
-        <div style="margin-bottom:12px; padding:10px 12px; border-radius:10px; border:1px solid #dbe4f0; background:#f8fafc; color:#334155; font-size:.85rem;">
-            <strong>Audit path branding</strong><br>
-            Logo path DB: <code>{{ $setting->logo_path ?: '-' }}</code> (disk public: <strong>{{ $logoOnPublicDisk ? 'ada' : 'tidak ada' }}</strong>)<br>
-            Logo icon path DB: <code>{{ $setting->logo_icon_path ?: '-' }}</code> (disk public: <strong>{{ $logoIconOnPublicDisk ? 'ada' : 'tidak ada' }}</strong>)<br>
-            Favicon path DB: <code>{{ $setting->favicon_path ?: '-' }}</code> (disk public: <strong>{{ $faviconOnPublicDisk ? 'ada' : 'tidak ada' }}</strong>)<br>
-            URL logo aktif: <code>{{ $globalBranding['logo_url'] ?? '-' }}</code><br>
-            URL logo icon aktif: <code>{{ $globalBranding['logo_icon_url'] ?? '-' }}</code><br>
-            URL favicon aktif: <code>{{ $globalBranding['favicon_url'] ?? '-' }}</code>
-        </div>
 
         <form method="POST" action="{{ route('settings.app.update') }}" enctype="multipart/form-data" class="grid-2">
             @csrf
@@ -69,11 +46,8 @@
                 <input type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.svg">
                 @if($logoUrl)
                     <small style="display:block; margin-top:6px; color:#64748b;">
-                        Logo aktif:
-                        <a href="{{ $logoUrl }}" target="_blank">lihat file</a> ·
-                        <a href="#" id="test-logo-url" data-url="{{ $logoUrl }}">Test URL Logo Aktif</a>
+                        Logo aktif: <a href="{{ $logoUrl }}" target="_blank">lihat file</a>
                     </small>
-                    <small id="test-logo-result" style="display:block; margin-top:4px; color:#64748b;"></small>
                 @endif
             </div>
 
@@ -136,41 +110,3 @@
     </div>
 @endsection
 
-@push('scripts')
-<script>
-    (function () {
-        const trigger = document.getElementById('test-logo-url');
-        const result = document.getElementById('test-logo-result');
-
-        if (!trigger || !result) return;
-
-        trigger.addEventListener('click', async function (event) {
-            event.preventDefault();
-
-            const targetUrl = this.dataset.url;
-            if (!targetUrl) {
-                result.textContent = 'URL logo tidak tersedia.';
-                result.style.color = '#b91c1c';
-                return;
-            }
-
-            result.textContent = 'Menguji akses URL logo...';
-            result.style.color = '#64748b';
-
-            try {
-                const response = await fetch(targetUrl, { method: 'GET', cache: 'no-store' });
-                if (response.ok) {
-                    result.textContent = `Berhasil diakses (HTTP ${response.status}).`;
-                    result.style.color = '#166534';
-                } else {
-                    result.textContent = `Gagal diakses (HTTP ${response.status}).`;
-                    result.style.color = '#b45309';
-                }
-            } catch (error) {
-                result.textContent = 'Gagal diakses (network/CORS/error browser). Coba klik "lihat file".';
-                result.style.color = '#b91c1c';
-            }
-        });
-    })();
-</script>
-@endpush
