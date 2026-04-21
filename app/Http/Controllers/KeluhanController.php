@@ -35,7 +35,7 @@ class KeluhanController extends Controller
         return view('keluhan.index', [
             'laporans' => $query->paginate(12)->withQueryString(),
             'filters' => $filters,
-            'mapPoints' => $query->clone()->whereNotNull('latitude')->whereNotNull('longitude')->limit(200)->get()->map(fn ($item) => [
+            'mapPoints' => (clone $query)->whereNotNull('latitude')->whereNotNull('longitude')->limit(200)->get()->map(fn ($item) => [
                 'id' => $item->id,
                 'judul' => $item->judul,
                 'status' => $item->status_penanganan,
