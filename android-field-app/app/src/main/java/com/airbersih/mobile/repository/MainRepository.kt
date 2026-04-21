@@ -1,9 +1,9 @@
 package com.airbersih.mobile.repository
 
-import android.util.Log
 import com.airbersih.mobile.data.TokenManager
 import com.airbersih.mobile.model.*
 import com.airbersih.mobile.network.ApiService
+import com.airbersih.mobile.utils.MenuLogger
 import com.squareup.moshi.JsonDataException
 import kotlinx.coroutines.CancellationException
 import okhttp3.ResponseBody
@@ -19,8 +19,8 @@ class MainRepository(
 ) {
 
     suspend fun login(email: String, password: String): ResultState<LoginResponse> =
-        safeApiCall("login") {
-            handleResponse(api.login(LoginRequest(email, password))).also { result ->
+        safeApiCall("login", "POST /login") {
+            handleResponse(api.login(LoginRequest(email, password)), "POST /login").also { result ->
                 if (result is ResultState.Success) {
                     val token = result.data.data?.accessToken
                     if (!token.isNullOrBlank()) {
@@ -33,71 +33,89 @@ class MainRepository(
         }
 
     suspend fun logout(): ResultState<ApiMessageResponse> {
-        val response = safeApiCall("logout") { handleResponse(api.logout()) }
+        val response = safeApiCall("logout", "POST /logout") { handleResponse(api.logout(), "POST /logout") }
         tokenManager.clearToken()
         return response
     }
 
     suspend fun me(): ResultState<User> =
-        safeApiCall("me") {
-            handleResponse(api.me()) { envelope ->
+        safeApiCall("me", "GET /me") {
+            handleResponse(api.me(), "GET /me") { envelope ->
                 envelope.data ?: throw IllegalStateException("Data profil kosong")
             }
         }
 
     suspend fun dashboard(): ResultState<DashboardSummary> =
-        safeApiCall("dashboard") {
-            handleResponse(api.dashboard()) { envelope ->
+        safeApiCall("dashboard", "GET /dashboard-ringkas") {
+            handleResponse(api.dashboard(), "GET /dashboard-ringkas") { envelope ->
                 envelope.data ?: DashboardSummary()
             }
         }
 
     suspend fun pelanggan(query: String?, desa: String?): ResultState<List<Pelanggan>> =
-        safeApiCall("pelanggan") {
-            handleResponse(api.pelanggan(query, desa)) { payload -> payload.data ?: emptyList() }
+        safeApiCall("pelanggan", "GET /pelanggan") {
+            MenuLogger.api("endpoint=GET /pelanggan query='${query.orEmpty()}' desa='${desa.orEmpty()}'")
+            handleResponse(api.pelanggan(query, desa), "GET /pelanggan") { payload -> payload.data ?: emptyList() }
         }
 
-    suspend fun pelangganDetail(id: Long) = safeApiCall("pelangganDetail") { handleResponse(api.pelangganDetail(id)) }
-    suspend fun createMeter(request: MeterRecordRequest) = safeApiCall("createMeter") { handleResponse(api.createMeter(request)) }
+    suspend fun pelangganDetail(id: Long) = safeApiCall("pelangganDetail", "GET /pelanggan/{id}") {
+        handleResponse(api.pelangganDetail(id), "GET /pelanggan/$id")
+    }
+
+    suspend fun createMeter(request: MeterRecordRequest) = safeApiCall("createMeter", "POST /meter-records") {
+        MenuLogger.api("endpoint=POST /meter-records pelangganId=${request.pelangganId} recordedAt=${request.recordedAt}")
+        handleResponse(api.createMeter(request), "POST /meter-records")
+    }
 
     suspend fun tagihan(pelangganId: Long?): ResultState<List<Tagihan>> =
-        safeApiCall("tagihan") {
-            handleResponse(api.tagihan(pelangganId)) { envelope -> envelope.data?.data ?: emptyList() }
+        safeApiCall("tagihan", "GET /tagihan") {
+            MenuLogger.api("endpoint=GET /tagihan pelanggan_id=${pelangganId ?: "all"}")
+            handleResponse(api.tagihan(pelangganId), "GET /tagihan") { envelope -> envelope.data?.data ?: emptyList() }
         }
 
-    suspend fun createPembayaran(request: PembayaranRequest) = safeApiCall("createPembayaran") { handleResponse(api.pembayaran(request)) }
+    suspend fun createPembayaran(request: PembayaranRequest) = safeApiCall("createPembayaran", "POST /pembayaran") {
+        MenuLogger.api("endpoint=POST /pembayaran tagihanId=${request.tagihanId} method=${request.paymentMethod}")
+        handleResponse(api.pembayaran(request), "POST /pembayaran")
+    }
 
     suspend fun keluhan(): ResultState<List<Keluhan>> =
-        safeApiCall("keluhan") {
-            handleResponse(api.keluhan()) { envelope -> envelope.data?.data ?: emptyList() }
+        safeApiCall("keluhan", "GET /keluhan") {
+            handleResponse(api.keluhan(), "GET /keluhan") { envelope -> envelope.data?.data ?: emptyList() }
         }
 
-    suspend fun createKeluhan(request: KeluhanRequest) = safeApiCall("createKeluhan") { handleResponse(api.createKeluhan(request)) }
+    suspend fun createKeluhan(request: KeluhanRequest) = safeApiCall("createKeluhan", "POST /keluhan") {
+        MenuLogger.api("endpoint=POST /keluhan jenis=${request.jenisLaporan} prioritas=${request.prioritas}")
+        handleResponse(api.createKeluhan(request), "POST /keluhan")
+    }
 
     suspend fun monitoringMap(gpsLatitude: Double?, gpsLongitude: Double?): ResultState<MonitoringMapResponse> =
-        safeApiCall("monitoringMap") {
-            handleResponse(api.monitoringMap(gpsLatitude, gpsLongitude)) { envelope ->
+        safeApiCall("monitoringMap", "GET /monitoring/peta") {
+            MenuLogger.api("endpoint=GET /monitoring/peta gps=${gpsLatitude ?: "-"},${gpsLongitude ?: "-"}")
+            handleResponse(api.monitoringMap(gpsLatitude, gpsLongitude), "GET /monitoring/peta") { envelope ->
                 envelope.data ?: MonitoringMapResponse()
             }
         }
 
-    private suspend fun <T> handleResponse(response: Response<T>): ResultState<T> =
-        handleResponse(response) { it }
+    private suspend fun <T> handleResponse(response: Response<T>, endpoint: String): ResultState<T> =
+        handleResponse(response, endpoint) { it }
 
-    private suspend fun <T, R> handleResponse(response: Response<T>, mapper: (T) -> R): ResultState<R> {
+    private suspend fun <T, R> handleResponse(response: Response<T>, endpoint: String, mapper: (T) -> R): ResultState<R> {
+        val code = response.code()
         if (response.isSuccessful) {
-            val body = response.body() ?: return ResultState.Error("Respons kosong dari server", response.code())
+            val body = response.body() ?: return ResultState.Error("Respons kosong dari server", code)
             return try {
-                ResultState.Success(mapper(body))
+                val mapped = mapper(body)
+                MenuLogger.api("endpoint=$endpoint status=success code=$code")
+                ResultState.Success(mapped)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                Log.e("MainRepository", "Mapping gagal", e)
-                ResultState.Error("Format data dari server tidak sesuai.", response.code())
+                MenuLogger.error("endpoint=$endpoint status=parse_failed code=$code message=${e.message}", e)
+                ResultState.Error("Format data dari server tidak sesuai.", code)
             }
         }
 
-        val code = response.code()
         val serverMessage = extractServerMessage(response.errorBody())
+        MenuLogger.error("endpoint=$endpoint status=failed code=$code message=${serverMessage ?: response.message()}")
         return when (code) {
             401 -> {
                 tokenManager.clearToken()
@@ -111,12 +129,13 @@ class MainRepository(
         }
     }
 
-    private suspend fun <T> safeApiCall(tag: String, block: suspend () -> ResultState<T>): ResultState<T> {
+    private suspend fun <T> safeApiCall(tag: String, endpoint: String, block: suspend () -> ResultState<T>): ResultState<T> {
         return try {
+            MenuLogger.api("request_start tag=$tag endpoint=$endpoint")
             block()
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            Log.e("MainRepository", "API error on $tag", e)
+            MenuLogger.error("endpoint=$endpoint status=exception message=${e.message}", e)
             when (e) {
                 is SocketTimeoutException -> ResultState.Error("Permintaan timeout. Coba lagi.")
                 is JsonDataException,

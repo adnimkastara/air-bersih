@@ -15,7 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.airbersih.mobile.viewmodel.MainViewModel
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.*
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun MonitoringScreen(vm: MainViewModel) {
@@ -32,6 +35,7 @@ fun MonitoringScreen(vm: MainViewModel) {
 
     if (!isMapConfigValid) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            MenuStatusBanner(vm)
             Text("Google Maps belum dikonfigurasi. Peta dinonaktifkan agar aplikasi tidak crash.")
             Text(
                 "Tetap aman: data monitoring API masih dapat dimuat.",

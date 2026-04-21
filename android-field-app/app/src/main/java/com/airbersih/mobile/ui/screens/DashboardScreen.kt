@@ -24,11 +24,11 @@ fun DashboardScreen(
     onOpenPembayaran: () -> Unit,
     onOpenKeluhan: () -> Unit,
     onOpenMonitoring: () -> Unit,
+    onOpenProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
     val me by vm.me.collectAsState()
     val summary by vm.dashboard.collectAsState()
-    val statusMessage by vm.statusMessage.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -49,7 +49,8 @@ fun DashboardScreen(
         Button(onClick = onOpenPembayaran, modifier = Modifier.fillMaxWidth()) { Text("Pembayaran") }
         Button(onClick = onOpenKeluhan, modifier = Modifier.fillMaxWidth()) { Text("Keluhan") }
         Button(onClick = onOpenMonitoring, modifier = Modifier.fillMaxWidth()) { Text("Monitoring Peta") }
+        Button(onClick = onOpenProfile, modifier = Modifier.fillMaxWidth()) { Text("Profil Saya") }
         Button(onClick = onLogout, modifier = Modifier.fillMaxWidth()) { Text("Logout") }
-        statusMessage?.let { Text(it) }
+        MenuStatusBanner(vm)
     }
 }
