@@ -31,7 +31,7 @@ fun PelangganScreen(vm: MainViewModel) {
             modifier = Modifier.fillMaxWidth()
         )
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(pelanggan) { item -> PelangganItem(item) }
+            items(items = pelanggan, key = { it.id ?: it.kodePelanggan.orEmpty() }) { item -> PelangganItem(item) }
         }
     }
 }
@@ -40,9 +40,9 @@ fun PelangganScreen(vm: MainViewModel) {
 private fun PelangganItem(item: Pelanggan) {
     Card(Modifier.fillMaxWidth().clickable { }) {
         Column(Modifier.padding(12.dp)) {
-            Text("${item.kodePelanggan} - ${item.nama}")
-            Text(item.alamat)
-            Text("Desa ${item.desa} | Status ${item.status}")
+            Text("${item.kodePelanggan ?: "-"} - ${item.nama ?: "Tanpa nama"}")
+            Text(item.alamat ?: "Alamat belum tersedia")
+            Text("Desa ID ${item.desaId ?: "-"} | Status ${item.status ?: "-"}")
             Text("Koordinat: ${item.latitude ?: "-"}, ${item.longitude ?: "-"}")
         }
     }

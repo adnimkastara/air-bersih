@@ -14,12 +14,10 @@ import androidx.compose.ui.unit.dp
 import com.airbersih.mobile.viewmodel.MainViewModel
 
 @Composable
-fun LoginScreen(vm: MainViewModel, onSuccess: () -> Unit) {
+fun LoginScreen(vm: MainViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val loggedIn by vm.isLoggedIn.collectAsState()
-
-    if (loggedIn) onSuccess()
+    val statusMessage by vm.statusMessage.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -29,8 +27,9 @@ fun LoginScreen(vm: MainViewModel, onSuccess: () -> Unit) {
         OutlinedTextField(email, { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(password, { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth())
         Button(
-            onClick = { vm.login(email, password) },
+            onClick = { vm.login(email.trim(), password) },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Masuk") }
+        statusMessage?.let { Text(it) }
     }
 }

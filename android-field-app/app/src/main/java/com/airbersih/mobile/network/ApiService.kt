@@ -16,16 +16,16 @@ interface ApiService {
     suspend fun logout(): Response<ApiMessageResponse>
 
     @GET("me")
-    suspend fun me(): Response<ApiDataResponse<User>>
+    suspend fun me(): Response<ApiEnvelope<User>>
 
     @GET("dashboard-ringkas")
-    suspend fun dashboard(): Response<ApiDataResponse<DashboardSummary>>
+    suspend fun dashboard(): Response<ApiEnvelope<DashboardSummary>>
 
     @GET("pelanggan")
     suspend fun pelanggan(
         @Query("q") query: String? = null,
         @Query("desa") desa: String? = null
-    ): Response<List<Pelanggan>>
+    ): Response<ApiPagination<Pelanggan>>
 
     @GET("pelanggan/{id}")
     suspend fun pelangganDetail(@Path("id") id: Long): Response<Pelanggan>
@@ -34,17 +34,20 @@ interface ApiService {
     suspend fun createMeter(@Body request: MeterRecordRequest): Response<ApiMessageResponse>
 
     @GET("tagihan")
-    suspend fun tagihan(@Query("pelanggan_id") pelangganId: Long? = null): Response<List<Tagihan>>
+    suspend fun tagihan(@Query("pelanggan_id") pelangganId: Long? = null): Response<ApiEnvelope<ApiPagination<Tagihan>>>
 
     @POST("pembayaran")
     suspend fun pembayaran(@Body request: PembayaranRequest): Response<ApiMessageResponse>
 
     @GET("keluhan")
-    suspend fun keluhan(): Response<List<Keluhan>>
+    suspend fun keluhan(): Response<ApiEnvelope<ApiPagination<Keluhan>>>
 
     @POST("keluhan")
     suspend fun createKeluhan(@Body request: KeluhanRequest): Response<ApiMessageResponse>
 
     @GET("monitoring/peta")
-    suspend fun monitoringMap(): Response<MonitoringMapResponse>
+    suspend fun monitoringMap(
+        @Query("gps_latitude") gpsLatitude: Double? = null,
+        @Query("gps_longitude") gpsLongitude: Double? = null
+    ): Response<ApiEnvelope<MonitoringMapResponse>>
 }

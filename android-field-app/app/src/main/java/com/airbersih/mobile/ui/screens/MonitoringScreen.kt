@@ -16,10 +16,12 @@ fun MonitoringScreen(vm: MainViewModel) {
 
     LaunchedEffect(Unit) { vm.loadMonitoring() }
 
-    val fallback = LatLng(-6.2, 106.8)
-    val center = monitoring?.let { LatLng(it.defaultCenterLat, it.defaultCenterLng) } ?: fallback
+    val fallback = monitoring?.fallbackCenter?.let {
+        LatLng(it.latitude ?: -6.2, it.longitude ?: 106.8)
+    } ?: LatLng(-6.2, 106.8)
+
     val cameraPositionState = rememberCameraPositionState {
-        position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(center, 13f)
+        position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(fallback, 13f)
     }
 
     GoogleMap(
@@ -30,8 +32,8 @@ fun MonitoringScreen(vm: MainViewModel) {
             if (p.latitude != null && p.longitude != null) {
                 Marker(
                     state = MarkerState(position = LatLng(p.latitude, p.longitude)),
-                    title = p.nama,
-                    snippet = "${p.kodePelanggan} | ${p.status}"
+                    title = p.nama ?: "Pelanggan",
+                    snippet = "${p.kodePelanggan ?: "-"} | ${p.status ?: "-"}"
                 )
             }
         }
@@ -39,8 +41,8 @@ fun MonitoringScreen(vm: MainViewModel) {
             if (k.latitude != null && k.longitude != null) {
                 Marker(
                     state = MarkerState(position = LatLng(k.latitude, k.longitude)),
-                    title = k.judul,
-                    snippet = "${k.kategori} | ${k.prioritas}"
+                    title = k.judul ?: "Keluhan",
+                    snippet = "${k.jenisLaporan ?: "-"} | ${k.prioritas ?: "-"}"
                 )
             }
         }

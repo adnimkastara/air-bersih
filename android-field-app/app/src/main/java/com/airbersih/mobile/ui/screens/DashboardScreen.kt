@@ -28,6 +28,7 @@ fun DashboardScreen(
 ) {
     val me by vm.me.collectAsState()
     val summary by vm.dashboard.collectAsState()
+    val statusMessage by vm.statusMessage.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -37,8 +38,9 @@ fun DashboardScreen(
             Column(Modifier.padding(16.dp)) {
                 Text("Petugas: ${me?.name ?: "-"}")
                 Text("Desa: ${me?.desa?.name ?: "-"}")
-                Text("Pelanggan: ${summary?.jumlahPelanggan ?: 0}")
-                Text("Keluhan aktif: ${summary?.keluhanAktif ?: 0}")
+                Text("Pelanggan: ${summary.jumlahPelanggan ?: 0}")
+                Text("Keluhan aktif: ${summary.keluhanAktif ?: 0}")
+                Text("Tagihan aktif: ${summary.tagihanAktif ?: 0}")
             }
         }
         Button(onClick = onOpenPelanggan, modifier = Modifier.fillMaxWidth()) { Text("Pelanggan") }
@@ -48,5 +50,6 @@ fun DashboardScreen(
         Button(onClick = onOpenKeluhan, modifier = Modifier.fillMaxWidth()) { Text("Keluhan") }
         Button(onClick = onOpenMonitoring, modifier = Modifier.fillMaxWidth()) { Text("Monitoring Peta") }
         Button(onClick = onLogout, modifier = Modifier.fillMaxWidth()) { Text("Logout") }
+        statusMessage?.let { Text(it) }
     }
 }

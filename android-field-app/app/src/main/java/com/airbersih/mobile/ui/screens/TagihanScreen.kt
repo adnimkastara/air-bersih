@@ -25,12 +25,12 @@ fun TagihanScreen(vm: MainViewModel) {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(items) { item ->
+        items(items = items, key = { it.id ?: it.periode.orEmpty() }) { item ->
             Card {
                 Column(Modifier.padding(12.dp)) {
-                    Text("Periode ${item.periode}")
-                    Text("Nominal Rp${item.nominal}")
-                    Text("Status ${item.status}")
+                    Text("Periode ${item.periode ?: "-"}")
+                    Text("Nominal Rp${item.nominal ?: 0.0}")
+                    Text("Status ${item.status ?: "-"}")
                 }
             }
         }
