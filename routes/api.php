@@ -10,12 +10,17 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['api.token', 'role:root,admin_kecamatan,admin_desa,petugas_lapangan'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
+        Route::put('/profile/password', [AuthController::class, 'updatePassword']);
 
         Route::get('/pelanggan', [FieldAppController::class, 'pelangganIndex']);
         Route::get('/pelanggan/{pelanggan}', [FieldAppController::class, 'pelangganShow']);
+        Route::post('/pelanggan', [FieldAppController::class, 'pelangganStore'])->middleware('role:admin_desa,petugas_lapangan');
         Route::get('/meter-records', [FieldAppController::class, 'meterIndex']);
         Route::post('/meter-records', [FieldAppController::class, 'meterStore']);
         Route::get('/tagihan', [FieldAppController::class, 'tagihanIndex']);
+        Route::get('/tagihan/{tagihan}', [FieldAppController::class, 'tagihanShow']);
+        Route::post('/tagihan/{tagihan}/publish', [FieldAppController::class, 'tagihanPublish'])->middleware('role:admin_desa,petugas_lapangan');
+        Route::get('/pembayaran', [FieldAppController::class, 'pembayaranIndex']);
         Route::post('/pembayaran', [FieldAppController::class, 'pembayaranStore'])->middleware('role:admin_desa,petugas_lapangan');
         Route::get('/keluhan', [FieldAppController::class, 'keluhanIndex']);
         Route::post('/keluhan', [FieldAppController::class, 'keluhanStore']);

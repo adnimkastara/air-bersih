@@ -9,10 +9,18 @@ use App\Models\MeterRecord;
 use App\Models\Pembayaran;
 use App\Models\Pelanggan;
 use App\Models\Tagihan;
+use App\Models\Desa;
+use App\Services\GenerateCustomerCodeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class FieldAppController extends Controller
 {
+    public function __construct(private readonly GenerateCustomerCodeService $customerCodeService)
+    {
+    }
+
     public function pelangganIndex(Request $request)
     {
         $query = Pelanggan::query()->orderBy('name');
@@ -30,6 +38,44 @@ class FieldAppController extends Controller
         }
 
         return new PelangganResource($pelanggan);
+    }
+
+    public function pelangganStore(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['required', 'string', 'max:1000'],
+            'dusun' => ['required', 'string', 'max:255'],
+            'jenis_pelanggan' => ['required', 'string', 'max:100'],
+            'nomor_meter' => ['required', 'string', 'max:50', Rule::unique('pelanggans', 'nomor_meter')],
+            'kecamatan_id' => ['nullable', 'exists:kecamatans,id'],
+            'desa_id' => ['required', 'exists:desas,id'],
+            'assigned_petugas_id' => ['nullable', 'exists:users,id'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'status' => ['required', 'in:aktif,nonaktif'],
+        ]);
+
+        if (! $request->user()->isKecamatanLevel()) {
+            $data['desa_id'] = $request->user()->desa_id;
+        }
+        $this->abortUnlessCanAccessDesa($request, $data['desa_id']);
+
+        $pelanggan = DB::transaction(function () use ($data) {
+            $desa = Desa::query()->lockForUpdate()->findOrFail($data['desa_id']);
+            $generated = $this->customerCodeService->nextForDesa($desa);
+            $data['kode_pelanggan'] = $generated['kode_pelanggan'];
+            $data['nomor_urut_desa'] = $generated['nomor_urut_desa'];
+
+            return Pelanggan::create($data);
+        });
+
+        return response()->json([
+            'message' => 'Pelanggan berhasil dibuat.',
+            'data' => new PelangganResource($pelanggan),
+        ], 201);
     }
 
     public function meterIndex(Request $request)
@@ -72,6 +118,45 @@ class FieldAppController extends Controller
         $query = Tagihan::with(['pelanggan', 'pembayarans'])->orderByDesc('period');
         if (! $request->user()->isKecamatanLevel()) {
             $query->whereHas('pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id));
+        }
+
+        return response()->json(['data' => $query->paginate(20)]);
+    }
+
+    public function tagihanShow(Request $request, Tagihan $tagihan)
+    {
+        $tagihan->load(['pelanggan', 'meterRecord', 'tarif', 'pembayarans.petugas']);
+        if (! $request->user()->isKecamatanLevel()) {
+            $this->abortUnlessCanAccessDesa($request, $tagihan->pelanggan?->desa_id);
+        }
+
+        $totalPaid = (float) $tagihan->pembayarans->sum('amount');
+
+        return response()->json([
+            'data' => [
+                'tagihan' => $tagihan,
+                'total_paid' => $totalPaid,
+                'remaining' => max(0, (float) $tagihan->amount - $totalPaid),
+            ],
+        ]);
+    }
+
+    public function tagihanPublish(Request $request, Tagihan $tagihan)
+    {
+        if (! $request->user()->isKecamatanLevel()) {
+            $this->abortUnlessCanAccessDesa($request, $tagihan->pelanggan?->desa_id);
+        }
+        $tagihan->status = 'terbit';
+        $tagihan->save();
+
+        return response()->json(['message' => 'Tagihan berhasil diterbitkan.']);
+    }
+
+    public function pembayaranIndex(Request $request)
+    {
+        $query = Pembayaran::with(['tagihan.pelanggan', 'petugas'])->orderByDesc('paid_at');
+        if (! $request->user()->isKecamatanLevel()) {
+            $query->whereHas('tagihan.pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id));
         }
 
         return response()->json(['data' => $query->paginate(20)]);

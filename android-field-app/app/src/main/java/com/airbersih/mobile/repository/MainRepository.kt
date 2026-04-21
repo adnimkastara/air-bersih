@@ -45,6 +45,11 @@ class MainRepository(
             }
         }
 
+    suspend fun updatePassword(request: PasswordUpdateRequest) =
+        safeApiCall("updatePassword", "PUT /profile/password") {
+            handleResponse(api.updatePassword(request), "PUT /profile/password")
+        }
+
     suspend fun dashboard(): ResultState<DashboardSummary> =
         safeApiCall("dashboard", "GET /dashboard-ringkas") {
             handleResponse(api.dashboard(), "GET /dashboard-ringkas") { envelope ->
@@ -62,6 +67,19 @@ class MainRepository(
         handleResponse(api.pelangganDetail(id), "GET /pelanggan/$id")
     }
 
+    suspend fun createPelanggan(request: PelangganCreateRequest): ResultState<Pelanggan> =
+        safeApiCall("createPelanggan", "POST /pelanggan") {
+            MenuLogger.api("endpoint=POST /pelanggan name=${request.name} meter=${request.nomorMeter}")
+            handleResponse(api.createPelanggan(request), "POST /pelanggan") { envelope ->
+                envelope.data ?: throw IllegalStateException("Data pelanggan kosong")
+            }
+        }
+
+    suspend fun meterRecords(): ResultState<List<MeterRecordItem>> =
+        safeApiCall("meterRecords", "GET /meter-records") {
+            handleResponse(api.meterRecords(), "GET /meter-records") { envelope -> envelope.data?.data ?: emptyList() }
+        }
+
     suspend fun createMeter(request: MeterRecordRequest) = safeApiCall("createMeter", "POST /meter-records") {
         MenuLogger.api("endpoint=POST /meter-records pelangganId=${request.pelangganId} recordedAt=${request.recordedAt}")
         handleResponse(api.createMeter(request), "POST /meter-records")
@@ -71,6 +89,20 @@ class MainRepository(
         safeApiCall("tagihan", "GET /tagihan") {
             MenuLogger.api("endpoint=GET /tagihan pelanggan_id=${pelangganId ?: "all"}")
             handleResponse(api.tagihan(pelangganId), "GET /tagihan") { envelope -> envelope.data?.data ?: emptyList() }
+        }
+
+    suspend fun tagihanDetail(id: Long): ResultState<TagihanDetailResponse> =
+        safeApiCall("tagihanDetail", "GET /tagihan/{id}") {
+            handleResponse(api.tagihanDetail(id), "GET /tagihan/$id") { it.data ?: TagihanDetailResponse() }
+        }
+
+    suspend fun publishTagihan(id: Long) = safeApiCall("publishTagihan", "POST /tagihan/{id}/publish") {
+        handleResponse(api.publishTagihan(id), "POST /tagihan/$id/publish")
+    }
+
+    suspend fun pembayaranList(): ResultState<List<Pembayaran>> =
+        safeApiCall("pembayaranList", "GET /pembayaran") {
+            handleResponse(api.pembayaranList(), "GET /pembayaran") { envelope -> envelope.data?.data ?: emptyList() }
         }
 
     suspend fun createPembayaran(request: PembayaranRequest) = safeApiCall("createPembayaran", "POST /pembayaran") {

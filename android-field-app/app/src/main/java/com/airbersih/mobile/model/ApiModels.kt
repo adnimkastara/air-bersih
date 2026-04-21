@@ -64,6 +64,19 @@ data class Pelanggan(
     val longitude: Double? = null
 )
 
+data class PelangganCreateRequest(
+    val name: String,
+    val email: String? = null,
+    val phone: String? = null,
+    val address: String,
+    val dusun: String,
+    @Json(name = "jenis_pelanggan") val jenisPelanggan: String,
+    @Json(name = "nomor_meter") val nomorMeter: String,
+    val status: String = "aktif",
+    val latitude: Double? = null,
+    val longitude: Double? = null
+)
+
 data class MeterRecordRequest(
     @Json(name = "pelanggan_id") val pelangganId: Long,
     @Json(name = "meter_previous_month") val meterPreviousMonth: Int,
@@ -80,7 +93,14 @@ data class Tagihan(
     @Json(name = "pelanggan_id") val pelangganId: Long? = null,
     @Json(name = "period") val periode: String? = null,
     @Json(name = "amount") val nominal: Double? = 0.0,
-    val status: String? = null
+    val status: String? = null,
+    val pelanggan: Pelanggan? = null
+)
+
+data class TagihanDetailResponse(
+    val tagihan: Tagihan? = null,
+    @Json(name = "total_paid") val totalPaid: Double? = 0.0,
+    val remaining: Double? = 0.0
 )
 
 data class PembayaranRequest(
@@ -126,3 +146,27 @@ data class MonitoringLocation(
 )
 
 data class ApiMessageResponse(val message: String? = null)
+
+data class PasswordUpdateRequest(
+    @Json(name = "current_password") val currentPassword: String,
+    val password: String,
+    @Json(name = "password_confirmation") val passwordConfirmation: String
+)
+
+data class MeterRecordItem(
+    val id: Long? = null,
+    @Json(name = "meter_previous_month") val meterPreviousMonth: Int? = null,
+    @Json(name = "meter_current_month") val meterCurrentMonth: Int? = null,
+    @Json(name = "recorded_at") val recordedAt: String? = null,
+    @Json(name = "verification_status") val verificationStatus: String? = null,
+    val pelanggan: Pelanggan? = null
+)
+
+data class Pembayaran(
+    val id: Long? = null,
+    @Json(name = "tagihan_id") val tagihanId: Long? = null,
+    val amount: Double? = 0.0,
+    @Json(name = "payment_method") val paymentMethod: String? = null,
+    @Json(name = "paid_at") val paidAt: String? = null,
+    val tagihan: Tagihan? = null
+)

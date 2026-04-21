@@ -38,6 +38,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _tagihan = MutableStateFlow<List<Tagihan>>(emptyList())
     val tagihan: StateFlow<List<Tagihan>> = _tagihan
+    private val _tagihanDetail = MutableStateFlow<TagihanDetailResponse?>(null)
+    val tagihanDetail: StateFlow<TagihanDetailResponse?> = _tagihanDetail
+    private val _meterRecords = MutableStateFlow<List<MeterRecordItem>>(emptyList())
+    val meterRecords: StateFlow<List<MeterRecordItem>> = _meterRecords
+    private val _pembayaranList = MutableStateFlow<List<Pembayaran>>(emptyList())
+    val pembayaranList: StateFlow<List<Pembayaran>> = _pembayaranList
 
     private val _keluhan = MutableStateFlow<List<Keluhan>>(emptyList())
     val keluhan: StateFlow<List<Keluhan>> = _keluhan
@@ -109,6 +115,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 onError = { setMessage(it.message) }
             )
             loadPelanggan()
+            loadMeterRecords()
+            loadPembayaranList()
             loadKeluhan()
         }
     }
@@ -142,6 +150,33 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 ResultState.Loading -> Unit
             }
             clearLoading("tagihan")
+        }
+    }
+
+    fun loadTagihanDetail(tagihanId: Long) {
+        safeLaunch("loadTagihanDetail") {
+            when (val result = repository.tagihanDetail(tagihanId)) {
+                is ResultState.Success -> _tagihanDetail.value = result.data
+                is ResultState.Error -> if (!handleUnauthorized(result)) setMessage(result.message)
+                ResultState.Loading -> Unit
+            }
+        }
+    }
+
+    fun publishTagihan(tagihanId: Long) {
+        safeLaunch("publishTagihan") {
+            when (val result = repository.publishTagihan(tagihanId)) {
+                is ResultState.Success -> {
+                    setMessage(result.data.message ?: "Tagihan diterbitkan.")
+                    MenuLogger.api("form_submit_success menu=tagihan action=publish id=$tagihanId")
+                    loadTagihan(null)
+                }
+                is ResultState.Error -> {
+                    MenuLogger.error("form_submit_failed menu=tagihan action=publish id=$tagihanId message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
+                ResultState.Loading -> Unit
+            }
         }
     }
 
@@ -179,11 +214,28 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 gpsRecordedAt = DateTimeUtils.todayIsoDate()
             )
             when (val result = repository.createMeter(request)) {
-                is ResultState.Success -> setMessage(result.data.message ?: "Meter record tersimpan.")
-                is ResultState.Error -> if (!handleUnauthorized(result)) setMessage(result.message)
+                is ResultState.Success -> {
+                    MenuLogger.api("form_submit_success menu=meter pelanggan_id=$pelangganId")
+                    setMessage(result.data.message ?: "Meter record tersimpan.")
+                    loadMeterRecords()
+                }
+                is ResultState.Error -> {
+                    MenuLogger.error("form_submit_failed menu=meter pelanggan_id=$pelangganId message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
                 ResultState.Loading -> Unit
             }
             clearLoading("meter")
+        }
+    }
+
+    fun loadMeterRecords() {
+        safeLaunch("loadMeterRecords") {
+            when (val result = repository.meterRecords()) {
+                is ResultState.Success -> _meterRecords.value = result.data
+                is ResultState.Error -> if (!handleUnauthorized(result)) setMessage(result.message)
+                ResultState.Loading -> Unit
+            }
         }
     }
 
@@ -205,11 +257,32 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 )
             ) {
-                is ResultState.Success -> setMessage(result.data.message ?: "Pembayaran tersimpan.")
-                is ResultState.Error -> if (!handleUnauthorized(result)) setMessage(result.message)
+                is ResultState.Success -> {
+                    MenuLogger.api("form_submit_success menu=pembayaran tagihan_id=$tagihanId")
+                    setMessage(result.data.message ?: "Pembayaran tersimpan.")
+                    loadTagihan(null)
+                    loadPembayaranList()
+                }
+                is ResultState.Error -> {
+                    MenuLogger.error("form_submit_failed menu=pembayaran tagihan_id=$tagihanId message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
                 ResultState.Loading -> Unit
             }
             clearLoading("pembayaran")
+        }
+    }
+
+    fun loadPembayaranList() {
+        safeLaunch("loadPembayaranList") {
+            when (val result = repository.pembayaranList()) {
+                is ResultState.Success -> _pembayaranList.value = result.data
+                is ResultState.Error -> if (!handleUnauthorized(result)) {
+                    MenuLogger.error("endpoint_not_available menu=pembayaran reason=${result.message}")
+                    setMessage(result.message)
+                }
+                ResultState.Loading -> Unit
+            }
         }
     }
 
@@ -235,13 +308,62 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 )
             ) {
                 is ResultState.Success -> {
+                    MenuLogger.api("form_submit_success menu=keluhan")
                     setMessage(result.data.message ?: "Keluhan tersimpan.")
                     loadKeluhan()
                 }
-                is ResultState.Error -> if (!handleUnauthorized(result)) setMessage(result.message)
+                is ResultState.Error -> {
+                    MenuLogger.error("form_submit_failed menu=keluhan message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
                 ResultState.Loading -> Unit
             }
             clearLoading("keluhan")
+        }
+    }
+
+    fun createPelanggan(request: PelangganCreateRequest) {
+        safeLaunch("createPelanggan") {
+            when (val result = repository.createPelanggan(request)) {
+                is ResultState.Success -> {
+                    MenuLogger.api("form_submit_success menu=pelanggan action=create")
+                    setMessage("Pelanggan ${result.data.nama ?: ""} berhasil ditambahkan.")
+                    loadPelanggan()
+                }
+                is ResultState.Error -> {
+                    MenuLogger.error("form_submit_failed menu=pelanggan action=create message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
+                ResultState.Loading -> Unit
+            }
+        }
+    }
+
+    fun updatePassword(currentPassword: String, newPassword: String, confirmPassword: String) {
+        safeLaunch("updatePassword") {
+            if (newPassword.length < 8) {
+                setMessage("Password baru minimal 8 karakter.")
+                return@safeLaunch
+            }
+            when (
+                val result = repository.updatePassword(
+                    PasswordUpdateRequest(
+                        currentPassword = currentPassword,
+                        password = newPassword,
+                        passwordConfirmation = confirmPassword
+                    )
+                )
+            ) {
+                is ResultState.Success -> {
+                    MenuLogger.api("form_submit_success menu=profile action=update_password")
+                    setMessage(result.data.message ?: "Password diperbarui.")
+                }
+                is ResultState.Error -> {
+                    MenuLogger.error("form_submit_failed menu=profile action=update_password message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
+                ResultState.Loading -> Unit
+            }
         }
     }
 
@@ -282,6 +404,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _tagihan.value = emptyList()
         _keluhan.value = emptyList()
         _monitoring.value = null
+        _tagihanDetail.value = null
+        _meterRecords.value = emptyList()
+        _pembayaranList.value = emptyList()
     }
 
     private fun safeLaunch(tag: String, block: suspend () -> Unit) {

@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -27,14 +30,17 @@ import com.airbersih.mobile.viewmodel.MainViewModel
 @Composable
 fun MeterScreen(vm: MainViewModel) {
     val pelanggan by vm.pelanggan.collectAsState()
+    val records by vm.meterRecords.collectAsState()
     var expanded by remember { mutableStateOf(false) }
     var selectedId by remember { mutableStateOf<Long?>(null) }
     var selectedName by remember { mutableStateOf("Pilih pelanggan") }
     var angka by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) { vm.loadPelanggan() }
+    LaunchedEffect(Unit) { vm.loadPelanggan(); vm.loadMeterRecords() }
+    val previous = records.firstOrNull { it.pelanggan?.id == selectedId }?.meterCurrentMonth ?: 0
 
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        item {
         MenuStatusBanner(vm)
         ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
             OutlinedTextField(
@@ -62,7 +68,7 @@ fun MeterScreen(vm: MainViewModel) {
         OutlinedTextField(
             value = angka,
             onValueChange = { angka = it.filter { c -> c.isDigit() } },
-            label = { Text("Angka meter") },
+            label = { Text("Angka meter (sebelumnya: $previous)") },
             modifier = Modifier.fillMaxWidth()
         )
         Button(onClick = {
@@ -72,6 +78,17 @@ fun MeterScreen(vm: MainViewModel) {
             else vm.showMessage("Pilih pelanggan dan isi angka meter yang valid.")
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Kirim Meter Record")
+        }
+            Text("Riwayat Meter")
+        }
+        items(records.take(20), key = { it.id ?: 0 }) { item ->
+            Card {
+                Column(Modifier.padding(12.dp)) {
+                    Text(item.pelanggan?.nama ?: "-")
+                    Text("${item.meterPreviousMonth ?: 0} -> ${item.meterCurrentMonth ?: 0}")
+                    Text("${item.recordedAt ?: "-"} | ${item.verificationStatus ?: "-"}")
+                }
+            }
         }
     }
 }

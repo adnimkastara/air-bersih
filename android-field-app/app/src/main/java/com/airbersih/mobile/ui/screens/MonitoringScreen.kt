@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.airbersih.mobile.viewmodel.MainViewModel
+import com.airbersih.mobile.utils.MenuLogger
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
@@ -34,6 +35,7 @@ fun MonitoringScreen(vm: MainViewModel) {
     val isMapConfigValid = mapsApiKey.isNotBlank() && mapsApiKey != "YOUR_GOOGLE_MAPS_API_KEY"
 
     if (!isMapConfigValid) {
+        MenuLogger.error("feature_not_implemented menu=monitoring reason=google_maps_api_key_missing")
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             MenuStatusBanner(vm)
             Text("Google Maps belum dikonfigurasi. Peta dinonaktifkan agar aplikasi tidak crash.")
