@@ -6,8 +6,10 @@ import com.airbersih.mobile.model.*
 import com.airbersih.mobile.network.ApiService
 import com.squareup.moshi.JsonDataException
 import kotlinx.coroutines.CancellationException
-import retrofit2.Response
+import okhttp3.ResponseBody
+import okio.EOFException
 import retrofit2.HttpException
+import retrofit2.Response
 import java.io.IOException
 import java.net.SocketTimeoutException
 
@@ -95,16 +97,17 @@ class MainRepository(
         }
 
         val code = response.code()
+        val serverMessage = extractServerMessage(response.errorBody())
         return when (code) {
             401 -> {
                 tokenManager.clearToken()
-                ResultState.Error("Sesi habis. Silakan login ulang.", 401)
+                ResultState.Error(serverMessage ?: "Sesi habis. Silakan login ulang.", 401)
             }
-            403 -> ResultState.Error("Akses ditolak (403).", 403)
-            404 -> ResultState.Error("Data tidak ditemukan (404).", 404)
-            422 -> ResultState.Error("Validasi gagal. Periksa input.", 422)
-            in 500..599 -> ResultState.Error("Server sedang bermasalah ($code).", code)
-            else -> ResultState.Error("Gagal ($code) ${response.message()}", code)
+            403 -> ResultState.Error(serverMessage ?: "Akses ditolak (403).", 403)
+            404 -> ResultState.Error(serverMessage ?: "Data tidak ditemukan (404).", 404)
+            422 -> ResultState.Error(serverMessage ?: "Validasi gagal. Periksa input.", 422)
+            in 500..599 -> ResultState.Error(serverMessage ?: "Server sedang bermasalah ($code).", code)
+            else -> ResultState.Error(serverMessage ?: "Gagal ($code) ${response.message()}", code)
         }
     }
 
@@ -117,11 +120,22 @@ class MainRepository(
             when (e) {
                 is SocketTimeoutException -> ResultState.Error("Permintaan timeout. Coba lagi.")
                 is JsonDataException,
+                is EOFException,
+                is IllegalArgumentException,
                 is IllegalStateException -> ResultState.Error("Format respons tidak dikenali.")
                 is HttpException -> ResultState.Error("HTTP ${e.code()} ${e.message()}", e.code())
                 is IOException -> ResultState.Error("Tidak dapat terhubung ke server.")
                 else -> ResultState.Error("Terjadi kesalahan tidak terduga.")
             }
         }
+    }
+
+    private fun extractServerMessage(errorBody: ResponseBody?): String? {
+        return runCatching {
+            val body = errorBody?.string().orEmpty().trim()
+            if (body.isBlank()) return@runCatching null
+            val messageRegex = "\"message\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+            messageRegex.find(body)?.groupValues?.getOrNull(1)
+        }.getOrNull()
     }
 }

@@ -6,15 +6,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.airbersih.mobile.ui.screens.*
+import com.airbersih.mobile.ui.screens.DashboardScreen
+import com.airbersih.mobile.ui.screens.KeluhanScreen
+import com.airbersih.mobile.ui.screens.LoginScreen
+import com.airbersih.mobile.ui.screens.MeterScreen
+import com.airbersih.mobile.ui.screens.MonitoringScreen
+import com.airbersih.mobile.ui.screens.PelangganScreen
+import com.airbersih.mobile.ui.screens.PembayaranScreen
+import com.airbersih.mobile.ui.screens.TagihanScreen
 import com.airbersih.mobile.viewmodel.MainViewModel
 
 object Routes {
@@ -39,20 +44,16 @@ fun AppNavGraph(
 ) {
     val nav = rememberNavController()
     val loggedIn by vm.isLoggedIn.collectAsState()
-    val lastNavigationTarget = remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(loggedIn) {
         val target = if (loggedIn) Routes.Dashboard else Routes.Login
         val currentRoute = nav.currentBackStackEntry?.destination?.route
-        if (currentRoute != target && lastNavigationTarget.value != target) {
-            Log.d("AppNavGraph", "navigate auth state changed: $currentRoute -> $target")
-            nav.navigate(target) {
-                popUpTo(Routes.Loading) { inclusive = true }
-                launchSingleTop = true
-            }
-            lastNavigationTarget.value = target
-        } else {
-            Log.d("AppNavGraph", "skip duplicate navigation to $target")
+        if (currentRoute == target) return@LaunchedEffect
+
+        Log.d("AppNavGraph", "navigate auth state changed: $currentRoute -> $target")
+        nav.navigate(target) {
+            popUpTo(nav.graph.startDestinationId) { inclusive = true }
+            launchSingleTop = true
         }
     }
 

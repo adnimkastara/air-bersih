@@ -60,7 +60,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun login(email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) {
+            _statusMessage.value = "Email dan password wajib diisi."
+            return
+        }
         safeLaunch("login") {
+            _statusMessage.value = null
+            Log.d("MainViewModel", "Attempting login for email=$email")
             when (val result = repository.login(email, password)) {
                 is ResultState.Success -> {
                     val token = result.data.data?.accessToken
@@ -71,10 +77,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     cachedToken = token
                     _isLoggedIn.value = true
                     _me.value = result.data.data.user
-                    Log.d("MainViewModel", "login success, user=${_me.value?.email}")
+                    Log.d("MainViewModel", "login success, user=${_me.value?.email}, tokenStored=${token.isNotBlank()}")
                     refreshInitialData()
                 }
-                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
+                is ResultState.Error -> {
+                    Log.w("MainViewModel", "login failed code=${result.code} message=${result.message}")
+                    if (!handleUnauthorized(result)) _statusMessage.value = result.message
+                }
                 ResultState.Loading -> Unit
             }
         }
@@ -89,7 +98,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refreshInitialData() {
         safeLaunch("refreshInitialData") {
-            Log.d("MainViewModel", "Refreshing initial data")
+            Log.d("MainViewModel", "Refreshing initial data after login/session restore")
             repository.me().consume(
                 onSuccess = { _me.value = it },
                 onError = { _statusMessage.value = it.message }
