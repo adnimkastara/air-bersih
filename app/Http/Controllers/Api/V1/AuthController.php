@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -13,17 +15,30 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'device_name' => ['nullable', 'string', 'max:100'],
         ]);
 
-        if (! Auth::guard('web')->attempt(array_merge($credentials, ['is_active' => true]))) {
+        $user = User::query()
+            ->where('email', $credentials['email'])
+            ->where('is_active', true)
+            ->first();
+
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             return response()->json(['message' => 'Email/password tidak sesuai atau akun nonaktif.'], 422);
         }
 
-        $user = Auth::guard('web')->user();
+        $plainToken = Str::random(64);
+        $user->apiAccessTokens()->create([
+            'name' => $credentials['device_name'] ?? 'android-app',
+            'token_hash' => hash('sha256', $plainToken),
+        ]);
 
         return response()->json([
             'message' => 'Login berhasil.',
             'data' => [
+                'token_type' => 'Bearer',
+                'access_token' => $plainToken,
+                'device_name' => $credentials['device_name'] ?? 'android-app',
                 'user' => $user?->load('role', 'desa', 'kecamatan'),
             ],
         ]);
@@ -31,7 +46,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::guard('web')->logout();
+        $token = $request->bearerToken();
+
+        if ($token) {
+            $request->user()?->apiAccessTokens()
+                ->where('token_hash', hash('sha256', $token))
+                ->delete();
+        }
 
         return response()->json(['message' => 'Logout berhasil.']);
     }
