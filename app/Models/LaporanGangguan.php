@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class LaporanGangguan extends Model
 {
     use HasFactory;
+
+    private static ?bool $hasCoordinateColumns = null;
 
     protected $fillable = [
         'kode_keluhan',
@@ -63,5 +66,23 @@ class LaporanGangguan extends Model
     public function handler()
     {
         return $this->belongsTo(User::class, 'ditangani_oleh');
+    }
+
+    public static function hasCoordinateColumns(): bool
+    {
+        if (self::$hasCoordinateColumns !== null) {
+            return self::$hasCoordinateColumns;
+        }
+
+        if (! Schema::hasTable('laporan_gangguans')) {
+            self::$hasCoordinateColumns = false;
+
+            return self::$hasCoordinateColumns;
+        }
+
+        self::$hasCoordinateColumns = Schema::hasColumn('laporan_gangguans', 'latitude')
+            && Schema::hasColumn('laporan_gangguans', 'longitude');
+
+        return self::$hasCoordinateColumns;
     }
 }

@@ -32,17 +32,22 @@ class KeluhanController extends Controller
             }
         }
 
-        return view('keluhan.index', [
-            'laporans' => $query->paginate(12)->withQueryString(),
-            'filters' => $filters,
-            'mapPoints' => (clone $query)->whereNotNull('latitude')->whereNotNull('longitude')->limit(200)->get()->map(fn ($item) => [
+        $mapPoints = collect();
+        if (LaporanGangguan::hasCoordinateColumns()) {
+            $mapPoints = (clone $query)->whereNotNull('latitude')->whereNotNull('longitude')->limit(200)->get()->map(fn ($item) => [
                 'id' => $item->id,
                 'judul' => $item->judul,
                 'status' => $item->status_penanganan,
                 'lat' => (float) $item->latitude,
                 'lng' => (float) $item->longitude,
                 'url' => route('keluhan.show', $item),
-            ])->values(),
+            ])->values();
+        }
+
+        return view('keluhan.index', [
+            'laporans' => $query->paginate(12)->withQueryString(),
+            'filters' => $filters,
+            'mapPoints' => $mapPoints,
         ]);
     }
 
@@ -83,6 +88,9 @@ class KeluhanController extends Controller
         $data['kecamatan_id'] = $data['kecamatan_id'] ?? $pelanggan?->kecamatan_id ?? $request->user()->kecamatan_id;
         $data['pelapor'] = $pelanggan?->name ?? $data['pelapor'];
         $data['no_hp'] = $data['no_hp'] ?: ($pelanggan?->phone ?? null);
+        if (! LaporanGangguan::hasCoordinateColumns()) {
+            unset($data['latitude'], $data['longitude']);
+        }
 
         if ($request->hasFile('foto_gangguan')) {
             $data['foto_path'] = $request->file('foto_gangguan')->store('keluhan', 'public');
