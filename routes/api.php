@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:api-login');
 
-    Route::middleware(['auth:web', 'role:root,admin_kecamatan,admin_desa,petugas_lapangan'])->group(function () {
+    Route::middleware(['api.token', 'role:root,admin_kecamatan,admin_desa,petugas_lapangan'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
 
