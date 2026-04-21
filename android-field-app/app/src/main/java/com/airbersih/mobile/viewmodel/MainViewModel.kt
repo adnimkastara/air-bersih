@@ -9,12 +9,12 @@ import com.airbersih.mobile.model.*
 import com.airbersih.mobile.network.NetworkModule
 import com.airbersih.mobile.repository.MainRepository
 import com.airbersih.mobile.repository.ResultState
+import com.airbersih.mobile.utils.DateTimeUtils
 import com.airbersih.mobile.utils.LocationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -66,7 +66,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val token = result.data.data?.accessToken
                     if (token.isNullOrBlank()) {
                         _statusMessage.value = "Token login tidak valid."
-                        return@launch
+                        return@safeLaunch
                     }
                     cachedToken = token
                     _isLoggedIn.value = true
@@ -133,7 +133,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun submitMeter(pelangganId: Long, angka: Int, tanggal: String = LocalDate.now().toString()) {
+    fun submitMeter(pelangganId: Long, angka: Int, tanggal: String = DateTimeUtils.todayIsoDate()) {
         safeLaunch("submitMeter") {
             val loc = locationHelper.getCurrentLocationOrNull()
             val request = MeterRecordRequest(
@@ -143,7 +143,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 recordedAt = tanggal,
                 gpsLatitude = loc?.latitude,
                 gpsLongitude = loc?.longitude,
-                gpsRecordedAt = LocalDate.now().toString()
+                gpsRecordedAt = DateTimeUtils.todayIsoDate()
             )
             when (val result = repository.createMeter(request)) {
                 is ResultState.Success -> _statusMessage.value = result.data.message ?: "Meter record tersimpan."
