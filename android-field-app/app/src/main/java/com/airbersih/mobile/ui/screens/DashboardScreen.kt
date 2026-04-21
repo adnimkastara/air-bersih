@@ -36,7 +36,7 @@ fun DashboardScreen(
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 Text("Petugas: ${me?.name ?: "-"}")
-                Text("Desa: ${me?.desa ?: "-"}")
+                Text("Desa: ${me?.desa?.name ?: "-"}")
                 Text("Pelanggan: ${summary?.jumlahPelanggan ?: 0}")
                 Text("Keluhan aktif: ${summary?.keluhanAktif ?: 0}")
             }

@@ -9,42 +9,42 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
-    @POST("api/v1/login")
+    @POST("login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
-    @POST("api/v1/logout")
+    @POST("logout")
     suspend fun logout(): Response<ApiMessageResponse>
 
-    @GET("api/v1/me")
-    suspend fun me(): Response<User>
+    @GET("me")
+    suspend fun me(): Response<ApiDataResponse<User>>
 
-    @GET("api/v1/dashboard-ringkas")
-    suspend fun dashboard(): Response<DashboardSummary>
+    @GET("dashboard-ringkas")
+    suspend fun dashboard(): Response<ApiDataResponse<DashboardSummary>>
 
-    @GET("api/v1/pelanggan")
+    @GET("pelanggan")
     suspend fun pelanggan(
         @Query("q") query: String? = null,
         @Query("desa") desa: String? = null
     ): Response<List<Pelanggan>>
 
-    @GET("api/v1/pelanggan/{id}")
+    @GET("pelanggan/{id}")
     suspend fun pelangganDetail(@Path("id") id: Long): Response<Pelanggan>
 
-    @POST("api/v1/meter-records")
+    @POST("meter-records")
     suspend fun createMeter(@Body request: MeterRecordRequest): Response<ApiMessageResponse>
 
-    @GET("api/v1/tagihan")
+    @GET("tagihan")
     suspend fun tagihan(@Query("pelanggan_id") pelangganId: Long? = null): Response<List<Tagihan>>
 
-    @POST("api/v1/pembayaran")
+    @POST("pembayaran")
     suspend fun pembayaran(@Body request: PembayaranRequest): Response<ApiMessageResponse>
 
-    @GET("api/v1/keluhan")
+    @GET("keluhan")
     suspend fun keluhan(): Response<List<Keluhan>>
 
-    @POST("api/v1/keluhan")
+    @POST("keluhan")
     suspend fun createKeluhan(@Body request: KeluhanRequest): Response<ApiMessageResponse>
 
-    @GET("api/v1/monitoring/peta")
+    @GET("monitoring/peta")
     suspend fun monitoringMap(): Response<MonitoringMapResponse>
 }

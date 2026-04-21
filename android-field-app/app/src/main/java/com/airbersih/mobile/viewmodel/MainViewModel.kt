@@ -60,12 +60,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             when (val result = repository.login(email, password)) {
                 is ResultState.Success -> {
-                    cachedToken = result.data.token
+                    cachedToken = result.data.data.accessToken
                     _isLoggedIn.value = true
-                    _me.value = result.data.user
+                    _me.value = result.data.data.user
                     refreshInitialData()
                 }
-                is ResultState.Error -> _statusMessage.value = result.message
+                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
         }
@@ -82,8 +82,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refreshInitialData() {
         viewModelScope.launch {
-            repository.me().let { if (it is ResultState.Success) _me.value = it.data }
-            repository.dashboard().let { if (it is ResultState.Success) _dashboard.value = it.data }
+            repository.me().let {
+                when (it) {
+                    is ResultState.Success -> _me.value = it.data
+                    is ResultState.Error -> handleUnauthorized(it)
+                    ResultState.Loading -> Unit
+                }
+            }
+            repository.dashboard().let {
+                when (it) {
+                    is ResultState.Success -> _dashboard.value = it.data
+                    is ResultState.Error -> handleUnauthorized(it)
+                    ResultState.Loading -> Unit
+                }
+            }
             loadPelanggan()
             loadKeluhan()
         }
@@ -93,7 +105,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             when (val result = repository.pelanggan(query, desa)) {
                 is ResultState.Success -> _pelanggan.value = result.data
-                is ResultState.Error -> _statusMessage.value = result.message
+                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
         }
@@ -103,7 +115,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             when (val result = repository.tagihan(pelangganId)) {
                 is ResultState.Success -> _tagihan.value = result.data
-                is ResultState.Error -> _statusMessage.value = result.message
+                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
         }
@@ -113,7 +125,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             when (val result = repository.keluhan()) {
                 is ResultState.Success -> _keluhan.value = result.data
-                is ResultState.Error -> _statusMessage.value = result.message
+                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
         }
@@ -131,7 +143,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             )
             when (val result = repository.createMeter(request)) {
                 is ResultState.Success -> _statusMessage.value = result.data.message
-                is ResultState.Error -> _statusMessage.value = result.message
+                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
         }
@@ -143,7 +155,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 PembayaranRequest(tagihanId, nominal, metode, tanggal, catatan)
             )) {
                 is ResultState.Success -> _statusMessage.value = result.data.message
-                is ResultState.Error -> _statusMessage.value = result.message
+                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
         }
@@ -166,7 +178,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     _statusMessage.value = result.data.message
                     loadKeluhan()
                 }
-                is ResultState.Error -> _statusMessage.value = result.message
+                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
         }
@@ -176,10 +188,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             when (val result = repository.monitoringMap()) {
                 is ResultState.Success -> _monitoring.value = result.data
-                is ResultState.Error -> _statusMessage.value = result.message
+                is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
                 ResultState.Loading -> Unit
             }
         }
+    }
+
+
+    private fun handleUnauthorized(result: ResultState.Error): Boolean {
+        if (result.code == 401) {
+            cachedToken = null
+            _isLoggedIn.value = false
+            _me.value = null
+            _dashboard.value = null
+            _pelanggan.value = emptyList()
+            _tagihan.value = emptyList()
+            _keluhan.value = emptyList()
+            _monitoring.value = null
+            _statusMessage.value = result.message
+            return true
+        }
+        return false
     }
 
     fun clearMessage() {

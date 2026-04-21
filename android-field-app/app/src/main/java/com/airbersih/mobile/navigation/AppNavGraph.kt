@@ -1,6 +1,7 @@
 package com.airbersih.mobile.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
@@ -27,7 +28,15 @@ fun AppNavGraph(vm: MainViewModel = viewModel(factory = androidx.lifecycle.ViewM
     val nav = rememberNavController()
     val loggedIn by vm.isLoggedIn.collectAsState()
 
-    NavHost(navController = nav, startDestination = if (loggedIn) Routes.Dashboard else Routes.Login) {
+    LaunchedEffect(loggedIn) {
+        if (loggedIn) {
+            nav.navigate(Routes.Dashboard) { popUpTo(Routes.Login) { inclusive = true } }
+        } else {
+            nav.navigate(Routes.Login) { popUpTo(0) }
+        }
+    }
+
+    NavHost(navController = nav, startDestination = Routes.Login) {
         composable(Routes.Login) {
             LoginScreen(vm) {
                 nav.navigate(Routes.Dashboard) { popUpTo(Routes.Login) { inclusive = true } }

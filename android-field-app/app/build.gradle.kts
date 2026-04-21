@@ -17,9 +17,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "BASE_URL_DEV", '"https://dev-api.airbersih.local/"')
-        buildConfigField("String", "BASE_URL_PROD", '"https://api.airbersihdesa.id/"')
-        buildConfigField("Boolean", "USE_PROD", "false")
+        buildConfigField("String", "BASE_URL_DEV", "\"https://dev-api.airbersih.local/\"")
+        buildConfigField("String", "BASE_URL_PROD", "\"https://airbersih.pelayanan.id/api/v1/\"")
+        buildConfigField("Boolean", "USE_PROD", "true")
         manifestPlaceholders["googleMapsApiKey"] = "YOUR_GOOGLE_MAPS_API_KEY"
     }
 
@@ -75,6 +75,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("com.google.android.material:material:1.12.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
