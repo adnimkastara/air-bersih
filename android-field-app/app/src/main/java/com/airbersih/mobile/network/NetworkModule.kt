@@ -1,12 +1,14 @@
 package com.airbersih.mobile.network
 
 import com.airbersih.mobile.BuildConfig
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import java.util.concurrent.TimeUnit
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.TimeUnit
 
 object NetworkModule {
 
@@ -18,7 +20,7 @@ object NetworkModule {
 
         val auth = Interceptor { chain ->
             val reqBuilder = chain.request().newBuilder()
-            tokenProvider()?.let { token ->
+            tokenProvider()?.takeIf { it.isNotBlank() }?.let { token ->
                 reqBuilder.addHeader("Authorization", "Bearer $token")
             }
             reqBuilder.addHeader("Accept", "application/json")
@@ -33,11 +35,15 @@ object NetworkModule {
             .addInterceptor(logging)
             .build()
 
+        val moshi = Moshi.Builder()
+            .addLast(KotlinJsonAdapterFactory())
+            .build()
+
         val baseUrl = if (BuildConfig.USE_PROD) BuildConfig.BASE_URL_PROD else BuildConfig.BASE_URL_DEV
 
         return Retrofit.Builder()
             .baseUrl(baseUrl)
-            .addConverterFactory(MoshiConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .client(client)
             .build()
             .create(ApiService::class.java)

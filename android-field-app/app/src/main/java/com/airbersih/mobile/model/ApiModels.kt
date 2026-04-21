@@ -14,7 +14,9 @@ data class LoginResponse(
 )
 
 data class LoginData(
+    @Json(name = "token_type") val tokenType: String? = null,
     @Json(name = "access_token") val accessToken: String? = null,
+    @Json(name = "device_name") val deviceName: String? = null,
     val user: User? = null
 )
 
