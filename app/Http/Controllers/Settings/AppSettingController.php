@@ -36,7 +36,7 @@ class AppSettingController extends Controller
             ? AppSetting::getGlobalSetting()
             : AppSetting::getOrCreateDesaSetting($user->desa_id);
 
-        $payload = $request->safe()->except(['logo', 'favicon']);
+        $payload = $request->safe()->except(['logo', 'logo_icon', 'favicon']);
 
         if ($request->hasFile('logo')) {
             if ($setting->logo_path && Storage::disk('public')->exists($setting->logo_path)) {
@@ -44,6 +44,14 @@ class AppSettingController extends Controller
             }
 
             $payload['logo_path'] = $request->file('logo')->store('branding', 'public');
+        }
+
+        if ($request->hasFile('logo_icon')) {
+            if ($setting->logo_icon_path && Storage::disk('public')->exists($setting->logo_icon_path)) {
+                Storage::disk('public')->delete($setting->logo_icon_path);
+            }
+
+            $payload['logo_icon_path'] = $request->file('logo_icon')->store('branding', 'public');
         }
 
         if ($request->hasFile('favicon')) {

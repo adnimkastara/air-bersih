@@ -28,6 +28,7 @@ class BrandingResolver
         $appName = trim((string) ($setting?->nama_aplikasi ?? '')) ?: self::DEFAULT_APP_NAME;
         $subtitle = trim((string) ($setting?->subjudul_aplikasi ?? '')) ?: self::DEFAULT_SUBTITLE;
         $primaryColor = trim((string) ($setting?->theme_color ?? '')) ?: self::DEFAULT_PRIMARY_COLOR;
+        $secondaryColor = trim((string) ($setting?->secondary_color ?? '')) ?: self::DEFAULT_SECONDARY_COLOR;
         $logoUrl = self::resolveImageUrl($setting?->logo_path, self::DEFAULT_LOGO_PATH);
         $logoIconUrl = self::resolveImageUrl($setting?->logo_icon_path, self::DEFAULT_LOGO_ICON_PATH) ?? $logoUrl;
 
@@ -36,7 +37,7 @@ class BrandingResolver
             'app_subtitle' => $subtitle,
             'subtitle' => $subtitle,
             'primary_color' => $primaryColor,
-            'secondary_color' => self::DEFAULT_SECONDARY_COLOR,
+            'secondary_color' => $secondaryColor,
             'theme_color' => $primaryColor,
             'logo_url' => $logoUrl,
             'logo_icon_url' => $logoIconUrl,

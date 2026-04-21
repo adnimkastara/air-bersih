@@ -10,11 +10,12 @@
     @include('layouts.partials.alerts')
     @php
         $logoUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->logo_path, 'assets/logo/logo-main.svg');
+        $logoIconUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->logo_icon_path, 'assets/logo/logo-icon.svg');
         $faviconUrl = \App\Support\BrandingResolver::resolveImageUrl($setting->favicon_path, 'favicon.ico');
-        $logoIconUrl = $logoUrl;
         $storageLinkExists = \Illuminate\Support\Facades\File::exists(public_path('storage'));
         $globalBranding = \App\Support\BrandingResolver::resolve($user);
         $logoOnPublicDisk = $setting->logo_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($setting->logo_path) : false;
+        $logoIconOnPublicDisk = $setting->logo_icon_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($setting->logo_icon_path) : false;
         $faviconOnPublicDisk = $setting->favicon_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($setting->favicon_path) : false;
     @endphp
 
@@ -32,8 +33,10 @@
         <div style="margin-bottom:12px; padding:10px 12px; border-radius:10px; border:1px solid #dbe4f0; background:#f8fafc; color:#334155; font-size:.85rem;">
             <strong>Audit path branding</strong><br>
             Logo path DB: <code>{{ $setting->logo_path ?: '-' }}</code> (disk public: <strong>{{ $logoOnPublicDisk ? 'ada' : 'tidak ada' }}</strong>)<br>
+            Logo icon path DB: <code>{{ $setting->logo_icon_path ?: '-' }}</code> (disk public: <strong>{{ $logoIconOnPublicDisk ? 'ada' : 'tidak ada' }}</strong>)<br>
             Favicon path DB: <code>{{ $setting->favicon_path ?: '-' }}</code> (disk public: <strong>{{ $faviconOnPublicDisk ? 'ada' : 'tidak ada' }}</strong>)<br>
             URL logo aktif: <code>{{ $globalBranding['logo_url'] ?? '-' }}</code><br>
+            URL logo icon aktif: <code>{{ $globalBranding['logo_icon_url'] ?? '-' }}</code><br>
             URL favicon aktif: <code>{{ $globalBranding['favicon_url'] ?? '-' }}</code>
         </div>
 
@@ -57,7 +60,12 @@
             </div>
 
             <div>
-                <label>Logo (Landing + Login + Navbar + Sidebar)</label>
+                <label>Warna Tema Sekunder</label>
+                <input type="color" name="secondary_color" value="{{ old('secondary_color', $setting->secondary_color ?: '#14b8a6') }}" style="height: 44px;">
+            </div>
+
+            <div>
+                <label>Logo (Landing + Login + Navbar)</label>
                 <input type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.svg">
                 @if($logoUrl)
                     <small style="display:block; margin-top:6px; color:#64748b;">
@@ -66,6 +74,14 @@
                         <a href="#" id="test-logo-url" data-url="{{ $logoUrl }}">Test URL Logo Aktif</a>
                     </small>
                     <small id="test-logo-result" style="display:block; margin-top:4px; color:#64748b;"></small>
+                @endif
+            </div>
+
+            <div>
+                <label>Logo Icon (Sidebar + ikon ringkas)</label>
+                <input type="file" name="logo_icon" accept=".png,.jpg,.jpeg,.webp,.svg">
+                @if($logoIconUrl)
+                    <small style="display:block; margin-top:6px; color:#64748b;">Logo icon aktif: <a href="{{ $logoIconUrl }}" target="_blank">lihat file</a></small>
                 @endif
             </div>
 
