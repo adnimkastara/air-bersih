@@ -15,26 +15,23 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt(array_merge($credentials, ['is_active' => true]))) {
+        if (! Auth::guard('web')->attempt(array_merge($credentials, ['is_active' => true]))) {
             return response()->json(['message' => 'Email/password tidak sesuai atau akun nonaktif.'], 422);
         }
 
-        $request->session()->regenerate();
+        $user = Auth::guard('web')->user();
 
         return response()->json([
             'message' => 'Login berhasil.',
             'data' => [
-                'session_id' => $request->session()->getId(),
-                'user' => $request->user()->load('role'),
+                'user' => $user?->load('role', 'desa', 'kecamatan'),
             ],
         ]);
     }
 
     public function logout(Request $request)
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        Auth::guard('web')->logout();
 
         return response()->json(['message' => 'Logout berhasil.']);
     }
