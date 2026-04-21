@@ -11,6 +11,7 @@ use App\Models\Pelanggan;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -170,11 +171,14 @@ class DashboardController extends Controller
             'totalTagihan' => (float) $tagihanQuery->sum('amount'),
             'totalPembayaran' => (float) $pembayaranQuery->sum('amount'),
             'totalTunggakan' => (float) (clone $tagihanQuery)->where('status', 'menunggak')->sum('amount'),
-            'totalGangguan' => LaporanGangguan::query()
-                ->where('desa_id', $user->desa_id)
+            'totalGangguan' => (clone $this->laporanGangguanByDesaQuery($user->desa_id))
                 ->whereIn('status_penanganan', ['baru', 'diproses'])
                 ->count(),
-            'recentKeluhan' => LaporanGangguan::query()->where('desa_id', $user->desa_id)->latest('reported_at')->latest('id')->limit(5)->get(),
+            'recentKeluhan' => $this->laporanGangguanByDesaQuery($user->desa_id)
+                ->latest('reported_at')
+                ->latest('id')
+                ->limit(5)
+                ->get(),
             'namaUnitPengelola' => $namaUnitPengelola,
             'namaKecamatan' => $namaKecamatan,
             'isKecamatanDashboard' => false,
@@ -192,5 +196,20 @@ class DashboardController extends Controller
             ],
             'latestNotifications' => $user->unreadNotifications()->latest()->limit(5)->get(),
         ]);
+    }
+
+    private function laporanGangguanByDesaQuery(int|string|null $desaId)
+    {
+        $query = LaporanGangguan::query();
+
+        if ($desaId === null) {
+            return $query;
+        }
+
+        if (Schema::hasColumn('laporan_gangguans', 'desa_id')) {
+            return $query->where('desa_id', $desaId);
+        }
+
+        return $query->whereHas('pelanggan', fn ($builder) => $builder->where('desa_id', $desaId));
     }
 }
