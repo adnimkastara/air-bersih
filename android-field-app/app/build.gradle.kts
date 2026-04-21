@@ -20,7 +20,8 @@ android {
         buildConfigField("String", "BASE_URL_DEV", "\"https://dev-api.airbersih.local/\"")
         buildConfigField("String", "BASE_URL_PROD", "\"https://airbersih.pelayanan.id/api/v1/\"")
         buildConfigField("Boolean", "USE_PROD", "true")
-        manifestPlaceholders["googleMapsApiKey"] = "YOUR_GOOGLE_MAPS_API_KEY"
+        val mapsApiKey = providers.gradleProperty("MAPS_API_KEY").orElse("").get()
+        manifestPlaceholders["googleMapsApiKey"] = mapsApiKey
     }
 
     buildTypes {

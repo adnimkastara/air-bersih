@@ -1,14 +1,16 @@
 package com.airbersih.mobile.navigation
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -16,6 +18,7 @@ import com.airbersih.mobile.ui.screens.*
 import com.airbersih.mobile.viewmodel.MainViewModel
 
 object Routes {
+    const val Loading = "loading"
     const val Login = "login"
     const val Dashboard = "dashboard"
     const val Pelanggan = "pelanggan"
@@ -36,21 +39,28 @@ fun AppNavGraph(
 ) {
     val nav = rememberNavController()
     val loggedIn by vm.isLoggedIn.collectAsState()
+    val lastNavigationTarget = remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(loggedIn) {
         val target = if (loggedIn) Routes.Dashboard else Routes.Login
-        if (nav.currentDestination?.route != target) {
+        val currentRoute = nav.currentBackStackEntry?.destination?.route
+        if (currentRoute != target && lastNavigationTarget.value != target) {
+            Log.d("AppNavGraph", "navigate auth state changed: $currentRoute -> $target")
             nav.navigate(target) {
-                popUpTo(nav.graph.findStartDestination().id) { inclusive = true }
+                popUpTo(Routes.Loading) { inclusive = true }
                 launchSingleTop = true
             }
+            lastNavigationTarget.value = target
+        } else {
+            Log.d("AppNavGraph", "skip duplicate navigation to $target")
         }
     }
 
     NavHost(
         navController = nav,
-        startDestination = if (loggedIn) Routes.Dashboard else Routes.Login
+        startDestination = Routes.Loading
     ) {
+        composable(Routes.Loading) { }
         composable(Routes.Login) { LoginScreen(vm) }
         composable(Routes.Dashboard) {
             DashboardScreen(

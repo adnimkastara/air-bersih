@@ -7,6 +7,7 @@ import com.airbersih.mobile.network.ApiService
 import com.squareup.moshi.JsonDataException
 import kotlinx.coroutines.CancellationException
 import retrofit2.Response
+import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
 
@@ -117,6 +118,7 @@ class MainRepository(
                 is SocketTimeoutException -> ResultState.Error("Permintaan timeout. Coba lagi.")
                 is JsonDataException,
                 is IllegalStateException -> ResultState.Error("Format respons tidak dikenali.")
+                is HttpException -> ResultState.Error("HTTP ${e.code()} ${e.message()}", e.code())
                 is IOException -> ResultState.Error("Tidak dapat terhubung ke server.")
                 else -> ResultState.Error("Terjadi kesalahan tidak terduga.")
             }

@@ -49,9 +49,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val statusMessage: StateFlow<String?> = _statusMessage
 
     init {
-        viewModelScope.launch {
+        safeLaunch("initSession") {
             cachedToken = tokenManager.tokenFlow.first()
             _isLoggedIn.value = !cachedToken.isNullOrBlank()
+            Log.d("MainViewModel", "initSession loggedIn=${_isLoggedIn.value}")
             if (_isLoggedIn.value) {
                 refreshInitialData()
             }
@@ -59,7 +60,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun login(email: String, password: String) {
-        viewModelScope.launch {
+        safeLaunch("login") {
             when (val result = repository.login(email, password)) {
                 is ResultState.Success -> {
                     val token = result.data.data?.accessToken
@@ -70,6 +71,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     cachedToken = token
                     _isLoggedIn.value = true
                     _me.value = result.data.data.user
+                    Log.d("MainViewModel", "login success, user=${_me.value?.email}")
                     refreshInitialData()
                 }
                 is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
@@ -79,14 +81,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun logout() {
-        viewModelScope.launch {
+        safeLaunch("logout") {
             repository.logout()
             resetSessionData()
         }
     }
 
     fun refreshInitialData() {
-        viewModelScope.launch {
+        safeLaunch("refreshInitialData") {
             Log.d("MainViewModel", "Refreshing initial data")
             repository.me().consume(
                 onSuccess = { _me.value = it },
@@ -102,7 +104,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun loadPelanggan(query: String? = null, desa: String? = null) {
-        viewModelScope.launch {
+        safeLaunch("loadPelanggan") {
             when (val result = repository.pelanggan(query, desa)) {
                 is ResultState.Success -> _pelanggan.value = result.data
                 is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
@@ -112,7 +114,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun loadTagihan(pelangganId: Long?) {
-        viewModelScope.launch {
+        safeLaunch("loadTagihan") {
             when (val result = repository.tagihan(pelangganId)) {
                 is ResultState.Success -> _tagihan.value = result.data
                 is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
@@ -122,7 +124,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun loadKeluhan() {
-        viewModelScope.launch {
+        safeLaunch("loadKeluhan") {
             when (val result = repository.keluhan()) {
                 is ResultState.Success -> _keluhan.value = result.data
                 is ResultState.Error -> if (!handleUnauthorized(result)) _statusMessage.value = result.message
@@ -132,7 +134,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun submitMeter(pelangganId: Long, angka: Int, tanggal: String = LocalDate.now().toString()) {
-        viewModelScope.launch {
+        safeLaunch("submitMeter") {
             val loc = locationHelper.getCurrentLocationOrNull()
             val request = MeterRecordRequest(
                 pelangganId = pelangganId,
@@ -152,7 +154,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun submitPembayaran(tagihanId: Long, nominal: Long, metode: String, tanggal: String, catatan: String) {
-        viewModelScope.launch {
+        safeLaunch("submitPembayaran") {
             when (val result = repository.createPembayaran(
                 PembayaranRequest(
                     tagihanId = tagihanId,
@@ -170,7 +172,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun submitKeluhan(judul: String, deskripsi: String, kategori: String, prioritas: String) {
-        viewModelScope.launch {
+        safeLaunch("submitKeluhan") {
             val loc = locationHelper.getCurrentLocationOrNull()
             when (val result = repository.createKeluhan(
                 KeluhanRequest(
@@ -193,7 +195,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun loadMonitoring() {
-        viewModelScope.launch {
+        safeLaunch("loadMonitoring") {
             val loc = locationHelper.getCurrentLocationOrNull()
             when (val result = repository.monitoringMap(loc?.latitude, loc?.longitude)) {
                 is ResultState.Success -> _monitoring.value = result.data
@@ -221,6 +223,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _tagihan.value = emptyList()
         _keluhan.value = emptyList()
         _monitoring.value = null
+    }
+
+    private fun safeLaunch(tag: String, block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Unhandled error in $tag", e)
+                _statusMessage.value = "Terjadi kesalahan aplikasi. Silakan coba lagi."
+            }
+        }
     }
 
     private fun <T> ResultState<T>.consume(onSuccess: (T) -> Unit, onError: (ResultState.Error) -> Unit) {
