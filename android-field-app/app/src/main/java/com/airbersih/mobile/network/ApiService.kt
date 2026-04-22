@@ -49,6 +49,9 @@ interface ApiService {
     @GET("tagihan/{id}")
     suspend fun tagihanDetail(@Path("id") id: Long): Response<ApiEnvelope<TagihanDetailResponse>>
 
+    @POST("tagihan/generate")
+    suspend fun generateTagihan(@Body request: TagihanGenerateRequest): Response<ApiMessageResponse>
+
     @POST("tagihan/{id}/publish")
     suspend fun publishTagihan(@Path("id") id: Long): Response<ApiMessageResponse>
 

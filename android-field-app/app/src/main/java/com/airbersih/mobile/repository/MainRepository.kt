@@ -96,6 +96,11 @@ class MainRepository(
             handleResponse(api.tagihanDetail(id), "GET /tagihan/$id") { it.data ?: TagihanDetailResponse() }
         }
 
+    suspend fun generateTagihan(period: String) = safeApiCall("generateTagihan", "POST /tagihan/generate") {
+        MenuLogger.api("endpoint=POST /tagihan/generate period=$period")
+        handleResponse(api.generateTagihan(TagihanGenerateRequest(period)), "POST /tagihan/generate")
+    }
+
     suspend fun publishTagihan(id: Long) = safeApiCall("publishTagihan", "POST /tagihan/{id}/publish") {
         handleResponse(api.publishTagihan(id), "POST /tagihan/$id/publish")
     }

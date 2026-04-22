@@ -70,11 +70,16 @@ data class PelangganCreateRequest(
     val phone: String? = null,
     val address: String,
     val dusun: String,
+    @Json(name = "desa_id") val desaId: Long? = null,
     @Json(name = "jenis_pelanggan") val jenisPelanggan: String,
     @Json(name = "nomor_meter") val nomorMeter: String,
     val status: String = "aktif",
     val latitude: Double? = null,
     val longitude: Double? = null
+)
+
+data class TagihanGenerateRequest(
+    val period: String
 )
 
 data class MeterRecordRequest(

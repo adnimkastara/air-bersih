@@ -324,7 +324,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun createPelanggan(request: PelangganCreateRequest) {
         safeLaunch("createPelanggan") {
-            when (val result = repository.createPelanggan(request)) {
+            val payload = request.copy(desaId = request.desaId ?: _me.value?.desa?.id)
+            when (val result = repository.createPelanggan(payload)) {
                 is ResultState.Success -> {
                     MenuLogger.api("form_submit_success menu=pelanggan action=create")
                     setMessage("Pelanggan ${result.data.nama ?: ""} berhasil ditambahkan.")
@@ -336,6 +337,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 ResultState.Loading -> Unit
             }
+        }
+    }
+
+    fun generateTagihan(period: String) {
+        safeLaunch("generateTagihan") {
+            if (!Regex("^\\d{4}-\\d{2}$").matches(period)) {
+                setMessage("Format periode harus YYYY-MM, contoh 2026-04.")
+                return@safeLaunch
+            }
+            setLoading("tagihan")
+            when (val result = repository.generateTagihan(period)) {
+                is ResultState.Success -> {
+                    MenuLogger.api("form_submit_success menu=tagihan action=generate period=$period")
+                    setMessage(result.data.message ?: "Tagihan berhasil digenerate.")
+                    loadTagihan(null)
+                }
+                is ResultState.Error -> {
+                    MenuLogger.error("form_submit_failed menu=tagihan action=generate period=$period message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
+                ResultState.Loading -> Unit
+            }
+            clearLoading("tagihan")
         }
     }
 
