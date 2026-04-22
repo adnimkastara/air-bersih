@@ -13,10 +13,17 @@ use App\Models\Desa;
 use App\Services\GenerateCustomerCodeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class FieldAppController extends Controller
 {
+    private const PAYMENT_METHODS = [
+        'tunai' => ['tunai', 'cash', 'CASH', 'Tunai'],
+        'transfer_bank' => ['transfer_bank', 'transfer', 'bank_transfer', 'Transfer Bank'],
+        'e_wallet' => ['e_wallet', 'ewallet', 'e-wallet', 'dompet_digital', 'E-Wallet'],
+    ];
+
     public function __construct(private readonly GenerateCustomerCodeService $customerCodeService)
     {
     }
@@ -28,7 +35,19 @@ class FieldAppController extends Controller
             $query->where('desa_id', $request->user()->desa_id);
         }
 
-        return PelangganResource::collection($query->paginate(20));
+        if ($keyword = trim((string) $request->query('q'))) {
+            $query->where(function ($builder) use ($keyword) {
+                $builder->where('name', 'like', "%{$keyword}%")
+                    ->orWhere('kode_pelanggan', 'like', "%{$keyword}%")
+                    ->orWhere('nomor_meter', 'like', "%{$keyword}%")
+                    ->orWhere('phone', 'like', "%{$keyword}%");
+            });
+        }
+
+        return $this->successResponse(
+            'Daftar pelanggan berhasil diambil.',
+            $query->paginate((int) $request->integer('per_page', 20))
+        );
     }
 
     public function pelangganShow(Request $request, Pelanggan $pelanggan)
@@ -37,11 +56,13 @@ class FieldAppController extends Controller
             $this->abortUnlessCanAccessDesa($request, $pelanggan->desa_id);
         }
 
-        return new PelangganResource($pelanggan);
+        return $this->successResponse('Detail pelanggan berhasil diambil.', new PelangganResource($pelanggan));
     }
 
     public function pelangganStore(Request $request)
     {
+        $isKecamatanLevel = $request->user()->isKecamatanLevel();
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -51,14 +72,14 @@ class FieldAppController extends Controller
             'jenis_pelanggan' => ['required', 'string', 'max:100'],
             'nomor_meter' => ['required', 'string', 'max:50', Rule::unique('pelanggans', 'nomor_meter')],
             'kecamatan_id' => ['nullable', 'exists:kecamatans,id'],
-            'desa_id' => ['required', 'exists:desas,id'],
+            'desa_id' => [$isKecamatanLevel ? 'required' : 'nullable', 'exists:desas,id'],
             'assigned_petugas_id' => ['nullable', 'exists:users,id'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'status' => ['required', 'in:aktif,nonaktif'],
         ]);
 
-        if (! $request->user()->isKecamatanLevel()) {
+        if (! $isKecamatanLevel) {
             $data['desa_id'] = $request->user()->desa_id;
         }
         $this->abortUnlessCanAccessDesa($request, $data['desa_id']);
@@ -72,10 +93,62 @@ class FieldAppController extends Controller
             return Pelanggan::create($data);
         });
 
-        return response()->json([
-            'message' => 'Pelanggan berhasil dibuat.',
-            'data' => new PelangganResource($pelanggan),
-        ], 201);
+        return $this->successResponse('Pelanggan berhasil dibuat.', new PelangganResource($pelanggan), 201);
+    }
+
+    public function pelangganUpdate(Request $request, Pelanggan $pelanggan)
+    {
+        if (! $request->user()->isKecamatanLevel()) {
+            $this->abortUnlessCanAccessDesa($request, $pelanggan->desa_id);
+        }
+
+        $isKecamatanLevel = $request->user()->isKecamatanLevel();
+        $data = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['sometimes', 'required', 'string', 'max:1000'],
+            'dusun' => ['sometimes', 'required', 'string', 'max:255'],
+            'jenis_pelanggan' => ['sometimes', 'required', 'string', 'max:100'],
+            'nomor_meter' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('pelanggans', 'nomor_meter')->ignore($pelanggan->id)],
+            'kecamatan_id' => ['nullable', 'exists:kecamatans,id'],
+            'desa_id' => [$isKecamatanLevel ? 'sometimes' : 'nullable', 'exists:desas,id'],
+            'assigned_petugas_id' => ['nullable', 'exists:users,id'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'status' => ['sometimes', 'required', 'in:aktif,nonaktif'],
+        ]);
+
+        if (! $isKecamatanLevel) {
+            $data['desa_id'] = $request->user()->desa_id;
+        }
+
+        if (isset($data['desa_id'])) {
+            $this->abortUnlessCanAccessDesa($request, $data['desa_id']);
+        }
+
+        $pelanggan->update($data);
+
+        return $this->successResponse('Pelanggan berhasil diperbarui.', new PelangganResource($pelanggan->fresh()));
+    }
+
+    public function pelangganDestroy(Request $request, Pelanggan $pelanggan)
+    {
+        if (! $request->user()->isKecamatanLevel()) {
+            $this->abortUnlessCanAccessDesa($request, $pelanggan->desa_id);
+        }
+
+        $hasDependency = $pelanggan->meterRecords()->exists()
+            || $pelanggan->tagihans()->exists()
+            || $pelanggan->laporanGangguans()->exists();
+
+        if ($hasDependency) {
+            return $this->errorResponse('Pelanggan tidak dapat dihapus karena sudah memiliki data transaksi/riwayat.', 422);
+        }
+
+        $pelanggan->delete();
+
+        return $this->successResponse('Pelanggan berhasil dihapus.', null);
     }
 
     public function meterIndex(Request $request)
@@ -85,7 +158,7 @@ class FieldAppController extends Controller
             $query->whereHas('pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id));
         }
 
-        return response()->json(['data' => $query->paginate(20)]);
+        return $this->successResponse('Daftar catat meter berhasil diambil.', $query->paginate((int) $request->integer('per_page', 20)));
     }
 
     public function meterStore(Request $request)
@@ -110,7 +183,7 @@ class FieldAppController extends Controller
         $data['verification_status'] = 'pending';
         $data['is_anomaly'] = (int) $data['meter_current_month'] < (int) $data['meter_previous_month'];
 
-        return response()->json(['message' => 'Meter record tersimpan.', 'data' => MeterRecord::create($data)], 201);
+        return $this->successResponse('Meter record tersimpan.', MeterRecord::create($data), 201);
     }
 
     public function tagihanIndex(Request $request)
@@ -120,7 +193,27 @@ class FieldAppController extends Controller
             $query->whereHas('pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id));
         }
 
-        return response()->json(['data' => $query->paginate(20)]);
+        if ($request->filled('pelanggan_id')) {
+            $query->where('pelanggan_id', $request->integer('pelanggan_id'));
+        }
+        if ($request->filled('status')) {
+            $query->where('status', (string) $request->string('status'));
+        }
+        if ($request->filled('period')) {
+            $query->where('period', (string) $request->string('period'));
+        }
+        if ($request->boolean('unpaid_only')) {
+            $query->whereIn('status', ['draft', 'terbit', 'menunggak']);
+        }
+
+        return $this->successResponse('Daftar tagihan berhasil diambil.', $query->paginate((int) $request->integer('per_page', 20)));
+    }
+
+    public function tagihanOpen(Request $request)
+    {
+        $request->merge(['unpaid_only' => true]);
+
+        return $this->tagihanIndex($request);
     }
 
     public function tagihanShow(Request $request, Tagihan $tagihan)
@@ -132,13 +225,11 @@ class FieldAppController extends Controller
 
         $totalPaid = (float) $tagihan->pembayarans->sum('amount');
 
-        return response()->json([
-            'data' => [
+        return $this->successResponse('Detail tagihan berhasil diambil.', [
                 'tagihan' => $tagihan,
                 'total_paid' => $totalPaid,
                 'remaining' => max(0, (float) $tagihan->amount - $totalPaid),
-            ],
-        ]);
+            ]);
     }
 
     public function tagihanPublish(Request $request, Tagihan $tagihan)
@@ -149,7 +240,85 @@ class FieldAppController extends Controller
         $tagihan->status = 'terbit';
         $tagihan->save();
 
-        return response()->json(['message' => 'Tagihan berhasil diterbitkan.']);
+        return $this->successResponse('Tagihan berhasil diterbitkan.', $tagihan->fresh());
+    }
+
+    public function tagihanGenerate(Request $request)
+    {
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+        ]);
+
+        $period = \Carbon\Carbon::createFromFormat('Y-m', $validated['period'])->startOfMonth();
+        $monthStart = $period->copy()->startOfMonth();
+        $monthEnd = $period->copy()->endOfMonth();
+
+        $meterRecords = MeterRecord::with('pelanggan')
+            ->whereBetween('recorded_at', [$monthStart, $monthEnd])
+            ->when(! $request->user()->isKecamatanLevel(), fn ($query) => $query->whereHas('pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id)))
+            ->get();
+
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($meterRecords as $record) {
+            if (! $record->pelanggan) {
+                $skipped++;
+                continue;
+            }
+
+            $exists = Tagihan::where('pelanggan_id', $record->pelanggan_id)
+                ->where('period', $period->format('Y-m'))
+                ->exists();
+
+            if ($exists) {
+                $skipped++;
+                continue;
+            }
+
+            $tarif = $record->pelanggan->activeTarif();
+            if (! $tarif) {
+                $skipped++;
+                continue;
+            }
+
+            $usage = max(0, (int) ($record->meter_current_month - $record->meter_previous_month));
+            $abonemenAmount = (float) $tarif->abonemen;
+            $baseAmount = (float) $tarif->tarif_dasar;
+            $usageAmount = $usage * (float) $tarif->tarif_per_m3;
+            $totalAmount = $abonemenAmount + $baseAmount + $usageAmount;
+
+            Tagihan::create([
+                'pelanggan_id' => $record->pelanggan_id,
+                'meter_record_id' => $record->id,
+                'tarif_id' => $tarif->id,
+                'amount' => $totalAmount,
+                'status' => 'draft',
+                'due_date' => $monthEnd->copy()->addDays(10),
+                'period' => $period->format('Y-m'),
+                'usage_m3' => $usage,
+                'base_amount' => $abonemenAmount + $baseAmount,
+                'usage_amount' => $usageAmount,
+                'late_fee' => 0,
+                'generated_at' => now(),
+            ]);
+
+            $created++;
+        }
+
+        return $this->successResponse("Generate tagihan {$period->format('Y-m')} selesai.", [
+                'created' => $created,
+                'skipped' => $skipped,
+                'period' => $period->format('Y-m'),
+            ]);
+    }
+
+    public function paymentMethods()
+    {
+        return $this->successResponse('Daftar metode pembayaran tersedia.', [
+            'canonical_values' => array_keys(self::PAYMENT_METHODS),
+            'aliases' => self::PAYMENT_METHODS,
+        ]);
     }
 
     public function pembayaranIndex(Request $request)
@@ -159,14 +328,37 @@ class FieldAppController extends Controller
             $query->whereHas('tagihan.pelanggan', fn ($q) => $q->where('desa_id', $request->user()->desa_id));
         }
 
-        return response()->json(['data' => $query->paginate(20)]);
+        if ($request->filled('tagihan_id')) {
+            $query->where('tagihan_id', $request->integer('tagihan_id'));
+        }
+        if ($request->filled('payment_method')) {
+            $method = $this->normalizePaymentMethod((string) $request->string('payment_method'));
+            $query->where('payment_method', $method ?? (string) $request->string('payment_method'));
+        }
+
+        return $this->successResponse('Riwayat pembayaran berhasil diambil.', $query->paginate((int) $request->integer('per_page', 20)));
+    }
+
+    public function pembayaranShow(Request $request, Pembayaran $pembayaran)
+    {
+        $pembayaran->load(['tagihan.pelanggan', 'petugas']);
+        if (! $request->user()->isKecamatanLevel()) {
+            $this->abortUnlessCanAccessDesa($request, $pembayaran->tagihan?->pelanggan?->desa_id);
+        }
+
+        return $this->successResponse('Detail pembayaran berhasil diambil.', $pembayaran);
     }
 
     public function pembayaranStore(Request $request)
     {
+        $canonicalMethod = $this->normalizePaymentMethod($request->input('payment_method'));
+        if ($canonicalMethod) {
+            $request->merge(['payment_method' => $canonicalMethod]);
+        }
+
         $data = $request->validate([
             'tagihan_id' => ['required', 'integer', 'exists:tagihans,id'],
-            'payment_method' => ['required', 'in:tunai,transfer_bank,e_wallet'],
+            'payment_method' => ['required', Rule::in(array_keys(self::PAYMENT_METHODS))],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'paid_at' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -179,7 +371,9 @@ class FieldAppController extends Controller
 
         $data['petugas_id'] = $request->user()->id;
 
-        return response()->json(['message' => 'Pembayaran tersimpan.', 'data' => Pembayaran::create($data)], 201);
+        $payment = Pembayaran::create($data);
+
+        return $this->successResponse('Pembayaran tersimpan.', $payment->load(['tagihan.pelanggan', 'petugas']), 201);
     }
 
     public function keluhanIndex(Request $request)
@@ -223,20 +417,18 @@ class FieldAppController extends Controller
         $data['pelapor'] = $pelanggan?->name ?? $data['pelapor'];
         $data['no_hp'] = $data['no_hp'] ?: ($pelanggan?->phone ?? null);
 
-        return response()->json(['message' => 'Keluhan tersimpan.', 'data' => LaporanGangguan::create($data)], 201);
+        return $this->successResponse('Keluhan tersimpan.', LaporanGangguan::create($data), 201);
     }
 
     public function dashboardRingkas(Request $request)
     {
         $desaId = $request->user()->desa_id;
 
-        return response()->json([
-            'data' => [
+        return $this->successResponse('Ringkasan dashboard berhasil diambil.', [
                 'total_pelanggan' => Pelanggan::when($desaId, fn ($q) => $q->where('desa_id', $desaId))->count(),
                 'total_tagihan_aktif' => Tagihan::when($desaId, fn ($q) => $q->whereHas('pelanggan', fn ($sq) => $sq->where('desa_id', $desaId)))->whereIn('status', ['draft', 'terbit', 'menunggak'])->count(),
                 'total_keluhan_aktif' => LaporanGangguan::when($desaId, fn ($q) => $q->where('desa_id', $desaId))->whereIn('status_penanganan', ['baru', 'diproses'])->count(),
-            ],
-        ]);
+            ]);
     }
 
     public function monitoringPeta(Request $request)
@@ -258,8 +450,7 @@ class FieldAppController extends Controller
             ->whereNotNull('longitude')
             ->get(['id', 'kode_keluhan', 'judul', 'status_penanganan', 'latitude', 'longitude']);
 
-        return response()->json([
-            'data' => [
+        return $this->successResponse('Data monitoring berhasil diambil.', [
                 'user_current_location' => [
                     'latitude' => $gpsLat,
                     'longitude' => $gpsLng,
@@ -270,7 +461,47 @@ class FieldAppController extends Controller
                 ],
                 'pelanggans' => $pelanggans,
                 'keluhans' => $keluhans,
-            ],
-        ]);
+            ]);
+    }
+
+    private function normalizePaymentMethod(?string $raw): ?string
+    {
+        if ($raw === null) {
+            return null;
+        }
+
+        $normalized = Str::lower(trim($raw));
+
+        foreach (self::PAYMENT_METHODS as $canonical => $aliases) {
+            $normalizedAliases = array_map(fn ($alias) => Str::lower(trim((string) $alias)), $aliases);
+            if (in_array($normalized, $normalizedAliases, true)) {
+                return $canonical;
+            }
+        }
+
+        return null;
+    }
+
+    private function successResponse(string $message, mixed $data = null, int $status = 200)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $data,
+        ], $status);
+    }
+
+    private function errorResponse(string $message, int $status = 400, array $errors = [])
+    {
+        $payload = [
+            'success' => false,
+            'message' => $message,
+        ];
+
+        if ($errors !== []) {
+            $payload['errors'] = $errors;
+        }
+
+        return response()->json($payload, $status);
     }
 }

@@ -9,23 +9,38 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.airbersih.mobile.utils.DateTimeUtils
 import com.airbersih.mobile.viewmodel.MainViewModel
 
 @Composable
 fun TagihanScreen(vm: MainViewModel) {
     val items by vm.tagihan.collectAsState()
     val detail by vm.tagihanDetail.collectAsState()
+    var period by remember { mutableStateOf(DateTimeUtils.todayIsoDate().take(7)) }
     LaunchedEffect(Unit) { vm.loadTagihan(null) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         MenuStatusBanner(vm)
+        OutlinedTextField(
+            value = period,
+            onValueChange = { period = it },
+            label = { Text("Periode tagihan (YYYY-MM)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Button(onClick = { vm.generateTagihan(period) }, modifier = Modifier.fillMaxWidth()) {
+            Text("Generate Tagihan")
+        }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(items = items, key = { it.id ?: it.periode.orEmpty() }) { item ->
                 Card {

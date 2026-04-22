@@ -32,12 +32,14 @@ import com.airbersih.mobile.viewmodel.MainViewModel
 fun PembayaranScreen(vm: MainViewModel) {
     val tagihan by vm.tagihan.collectAsState()
     val pembayaranList by vm.pembayaranList.collectAsState()
+    val paymentMethods = listOf("tunai", "transfer_bank", "e_wallet")
     var tagihanId by remember { mutableStateOf<Long?>(null) }
     var selectedTagihan by remember { mutableStateOf("Pilih tagihan") }
     var nominal by remember { mutableStateOf("") }
     var metode by remember { mutableStateOf("tunai") }
     var catatan by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
+    var methodExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         vm.loadTagihan(null)
@@ -61,13 +63,31 @@ fun PembayaranScreen(vm: MainViewModel) {
                         DropdownMenuItem(text = { Text("#${item.id} ${item.pelanggan?.nama ?: ""} (${item.status})") }, onClick = {
                             tagihanId = item.id
                             selectedTagihan = "#${item.id} ${item.periode} - Rp${item.nominal ?: 0.0}"
+                            nominal = item.nominal?.toLong()?.toString().orEmpty()
                             expanded = false
                         })
                     }
                 }
             }
             OutlinedTextField(nominal, { nominal = it.filter(Char::isDigit) }, label = { Text("Nominal") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(metode, { metode = it }, label = { Text("Metode (tunai/transfer_bank/e_wallet)") }, modifier = Modifier.fillMaxWidth())
+            ExposedDropdownMenuBox(expanded = methodExpanded, onExpandedChange = { methodExpanded = !methodExpanded }) {
+                OutlinedTextField(
+                    value = metode,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = methodExpanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    label = { Text("Metode pembayaran") }
+                )
+                ExposedDropdownMenu(expanded = methodExpanded, onDismissRequest = { methodExpanded = false }) {
+                    paymentMethods.forEach { method ->
+                        DropdownMenuItem(text = { Text(method) }, onClick = {
+                            metode = method
+                            methodExpanded = false
+                        })
+                    }
+                }
+            }
             OutlinedTextField(catatan, { catatan = it }, label = { Text("Catatan") }, modifier = Modifier.fillMaxWidth())
             Button(onClick = {
                 val n = nominal.toLongOrNull()
