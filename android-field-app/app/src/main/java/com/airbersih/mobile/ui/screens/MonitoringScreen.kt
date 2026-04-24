@@ -155,33 +155,38 @@ private fun LeafletMonitoringWebView(
     modifier: Modifier = Modifier,
     monitoring: MonitoringMapResponse
 ) {
-    var htmlContent by remember(monitoring) {
-        mutableStateOf(buildLeafletHtml(monitoring))
-    }
+    val htmlContent = remember(monitoring) { buildLeafletHtml(monitoring) }
 
     AndroidView(
         modifier = modifier,
         factory = { context ->
             WebView(context).apply {
+                layoutParams = android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.loadsImagesAutomatically = true
+                settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+
                 webChromeClient = WebChromeClient()
                 webViewClient = WebViewClient()
-                MenuLogger.mapFlow("webview_ready=true")
-                loadDataWithBaseURL(
-                    "https://localhost/",
-                    htmlContent,
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
+
+                tag = htmlContent
+                val encodedHtml = android.util.Base64.encodeToString(htmlContent.toByteArray(Charsets.UTF_8), android.util.Base64.NO_PADDING)
+                loadData(encodedHtml, "text/html", "base64")
+                MenuLogger.mapFlow("webview_ready_and_loaded=true")
             }
         },
         update = { view ->
-            htmlContent = buildLeafletHtml(monitoring)
-            view.loadDataWithBaseURL("https://localhost/", htmlContent, "text/html", "UTF-8", null)
-            MenuLogger.mapFlow("json_sent_to_leaflet=true")
+            val currentHtml = view.tag as? String
+            if (currentHtml != htmlContent) {
+                view.tag = htmlContent
+                val encodedHtml = android.util.Base64.encodeToString(htmlContent.toByteArray(Charsets.UTF_8), android.util.Base64.NO_PADDING)
+                view.loadData(encodedHtml, "text/html", "base64")
+                MenuLogger.mapFlow("webview_updated_with_new_data=true")
+            }
         }
     )
 }
