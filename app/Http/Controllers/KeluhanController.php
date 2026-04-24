@@ -8,6 +8,7 @@ use App\Models\Pelanggan;
 use App\Models\User;
 use App\Notifications\KeluhanBaruNotification;
 use App\Services\WhatsAppService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class KeluhanController extends Controller
@@ -86,7 +87,7 @@ class KeluhanController extends Controller
         $data['kode_keluhan'] = 'KLH-'.now()->format('Ymd').'-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
         $data['desa_id'] = $data['desa_id'] ?? $pelanggan?->desa_id ?? $request->user()->desa_id;
         $data['kecamatan_id'] = $data['kecamatan_id'] ?? $pelanggan?->kecamatan_id ?? $request->user()->kecamatan_id;
-        $data['pelapor'] = $pelanggan?->name ?? $data['pelapor'];
+        $data['pelapor'] = $this->resolvePelaporName($data['pelapor'] ?? null, $pelanggan?->name);
         $data['no_hp'] = $data['no_hp'] ?: ($pelanggan?->phone ?? null);
         if (! LaporanGangguan::hasCoordinateColumns()) {
             unset($data['latitude'], $data['longitude']);
@@ -164,9 +165,18 @@ class KeluhanController extends Controller
 
         if ($laporan->desa_id) {
             $petugasQuery->where('desa_id', $laporan->desa_id);
+        } elseif ($laporan->kecamatan_id) {
+            $petugasQuery->where('kecamatan_id', $laporan->kecamatan_id);
         }
 
         $petugasList = $petugasQuery->get();
+        if ($petugasList->isEmpty()) {
+            $petugasList = User::query()
+                ->whereHas('role', fn (Builder $query) => $query->where('name', 'petugas_lapangan'))
+                ->where('is_active', true)
+                ->get();
+        }
+
         $whatsAppService = app(WhatsAppService::class);
 
         foreach ($petugasList as $petugas) {
@@ -179,6 +189,16 @@ class KeluhanController extends Controller
                 );
             }
         }
+    }
+
+    private function resolvePelaporName(?string $inputPelapor, ?string $pelangganName): ?string
+    {
+        $candidate = trim((string) $inputPelapor);
+        if ($candidate !== '') {
+            return $candidate;
+        }
+
+        return $pelangganName;
     }
 
     private function buildWhatsAppMessage(LaporanGangguan $laporan): string

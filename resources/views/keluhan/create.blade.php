@@ -44,8 +44,8 @@ function applyPelangganDefaults() {
     const selectedId = pelangganInput.value;
     if (!selectedId || !pelangganOptions[selectedId]) return;
     const pelanggan = pelangganOptions[selectedId];
-    pelaporInput.value = pelanggan.name || pelaporInput.value;
-    noHpInput.value = pelanggan.phone || noHpInput.value;
+    if (!pelaporInput.value.trim()) pelaporInput.value = pelanggan.name || pelaporInput.value;
+    if (!noHpInput.value.trim()) noHpInput.value = pelanggan.phone || noHpInput.value;
 }
 map.on('click', (e) => setPoint(e.latlng.lat, e.latlng.lng));
 document.getElementById('useMyLocation').addEventListener('click', () => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition((pos) => setPoint(pos.coords.latitude, pos.coords.longitude), () => {}, {enableHighAccuracy:true,timeout:8000}); });

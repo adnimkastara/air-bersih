@@ -10,7 +10,11 @@ use App\Models\Pembayaran;
 use App\Models\Pelanggan;
 use App\Models\Tagihan;
 use App\Models\Desa;
+use App\Models\User;
+use App\Notifications\KeluhanBaruNotification;
+use App\Services\WhatsAppService;
 use App\Services\GenerateCustomerCodeService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -383,7 +387,10 @@ class FieldAppController extends Controller
             $query->where('desa_id', $request->user()->desa_id);
         }
 
-        return response()->json(['data' => $query->paginate(20)]);
+        return $this->successResponse(
+            'Daftar keluhan berhasil diambil.',
+            $query->paginate((int) $request->integer('per_page', 20))
+        );
     }
 
     public function keluhanStore(Request $request)
@@ -414,10 +421,12 @@ class FieldAppController extends Controller
         $data['kode_keluhan'] = 'KLH-'.now()->format('Ymd').'-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
         $data['desa_id'] = $pelanggan?->desa_id ?? $request->user()->desa_id;
         $data['kecamatan_id'] = $pelanggan?->kecamatan_id ?? $request->user()->kecamatan_id;
-        $data['pelapor'] = $pelanggan?->name ?? $data['pelapor'];
+        $data['pelapor'] = $this->resolvePelaporName($data['pelapor'] ?? null, $pelanggan?->name);
         $data['no_hp'] = $data['no_hp'] ?: ($pelanggan?->phone ?? null);
+        $laporan = LaporanGangguan::create($data);
+        $this->sendPetugasNotifications($laporan);
 
-        return $this->successResponse('Keluhan tersimpan.', LaporanGangguan::create($data), 201);
+        return $this->successResponse('Keluhan tersimpan.', $laporan, 201);
     }
 
     public function dashboardRingkas(Request $request)
@@ -480,6 +489,63 @@ class FieldAppController extends Controller
         }
 
         return null;
+    }
+
+    private function sendPetugasNotifications(LaporanGangguan $laporan): void
+    {
+        $petugasQuery = User::query()
+            ->whereHas('role', fn (Builder $query) => $query->where('name', 'petugas_lapangan'))
+            ->where('is_active', true);
+
+        if ($laporan->desa_id) {
+            $petugasQuery->where('desa_id', $laporan->desa_id);
+        } elseif ($laporan->kecamatan_id) {
+            $petugasQuery->where('kecamatan_id', $laporan->kecamatan_id);
+        }
+
+        $petugasList = $petugasQuery->get();
+        if ($petugasList->isEmpty()) {
+            $petugasList = User::query()
+                ->whereHas('role', fn (Builder $query) => $query->where('name', 'petugas_lapangan'))
+                ->where('is_active', true)
+                ->get();
+        }
+
+        $whatsAppService = app(WhatsAppService::class);
+
+        foreach ($petugasList as $petugas) {
+            $petugas->notify(new KeluhanBaruNotification($laporan));
+
+            if (! empty($petugas->no_hp)) {
+                $whatsAppService->sendMessage(
+                    $petugas->no_hp,
+                    $this->buildWhatsAppMessage($laporan)
+                );
+            }
+        }
+    }
+
+    private function buildWhatsAppMessage(LaporanGangguan $laporan): string
+    {
+        $lokasi = ($laporan->latitude !== null && $laporan->longitude !== null)
+            ? sprintf('https://maps.google.com/?q=%s,%s', $laporan->latitude, $laporan->longitude)
+            : '-';
+
+        return "Keluhan Baru:\n"
+            ."Judul: {$laporan->judul}\n"
+            .'Pelapor: '.($laporan->pelapor ?? '-')."\n"
+            .'Prioritas: '.ucfirst($laporan->prioritas ?? 'sedang')."\n"
+            ."Lokasi: {$lokasi}";
+    }
+
+    private function resolvePelaporName(?string $inputPelapor, ?string $pelangganName): ?string
+    {
+        $candidate = trim((string) $inputPelapor);
+        if ($candidate !== '') {
+            return $candidate;
+        }
+
+        return $pelangganName;
     }
 
     private function successResponse(string $message, mixed $data = null, int $status = 200)
