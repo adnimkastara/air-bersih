@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.airbersih.mobile.model.Keluhan
 import com.airbersih.mobile.model.MonitoringMapResponse
@@ -29,6 +31,7 @@ import com.airbersih.mobile.model.Pelanggan
 import com.airbersih.mobile.viewmodel.MainViewModel
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonitoringScreen(vm: MainViewModel) {
     val monitoring by vm.monitoring.collectAsState()
@@ -53,7 +56,7 @@ fun MonitoringScreen(vm: MainViewModel) {
                 CircularProgressIndicator()
                 Text(
                     text = "Memuat data monitoring...",
-                    modifier = Modifier.padding(top = androidx.compose.ui.unit.dp(12)),
+                    modifier = Modifier.padding(top = 12.dp),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -107,8 +110,8 @@ private fun buildLeafletHtml(monitoring: MonitoringMapResponse): String {
     val fallbackLat = monitoring.fallbackCenter?.latitude ?: -6.2
     val fallbackLng = monitoring.fallbackCenter?.longitude ?: 106.8
 
-    val pelangganMarkers = monitoring.pelanggan.toLeafletMarkers("pelanggan")
-    val keluhanMarkers = monitoring.keluhanAktif.toLeafletMarkers("keluhan")
+    val pelangganMarkers = monitoring.pelanggan.pelangganToMarkers("pelanggan")
+    val keluhanMarkers = monitoring.keluhanAktif.keluhanToMarkers("keluhan")
 
     return """
         <!DOCTYPE html>
@@ -185,7 +188,7 @@ private fun buildLeafletHtml(monitoring: MonitoringMapResponse): String {
     """.trimIndent()
 }
 
-private fun List<Pelanggan>.toLeafletMarkers(type: String): String =
+private fun List<Pelanggan>.pelangganToMarkers(type: String): String =
     mapNotNull { p ->
         val lat = p.latitude ?: return@mapNotNull null
         val lng = p.longitude ?: return@mapNotNull null
@@ -194,7 +197,7 @@ private fun List<Pelanggan>.toLeafletMarkers(type: String): String =
         markerJson(type, lat, lng, title, subtitle)
     }.joinToString(",")
 
-private fun List<Keluhan>.toLeafletMarkers(type: String): String =
+private fun List<Keluhan>.keluhanToMarkers(type: String): String =
     mapNotNull { k ->
         val lat = k.latitude ?: return@mapNotNull null
         val lng = k.longitude ?: return@mapNotNull null
