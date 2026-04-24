@@ -153,7 +153,8 @@ data class KeluhanRequest(
     val latitude: Double? = null,
     val longitude: Double? = null,
     @Json(name = "no_hp") val noHp: String,
-    val pelapor: String? = null
+    val pelapor: String? = null,
+    @Json(name = "lokasi_text") val lokasiText: String? = null
 )
 
 data class MonitoringMapResponse(

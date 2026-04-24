@@ -220,7 +220,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun submitMeter(pelangganId: Long, angka: Int, tanggal: String = DateTimeUtils.todayIsoDate()) {
+    fun submitMeter(pelangganId: Long, angka: Int, previous: Int, tanggal: String = DateTimeUtils.todayIsoDate()) {
         safeLaunch("submitMeter") {
             if (angka < 0) {
                 setMessage("Angka meter tidak valid.")
@@ -230,7 +230,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val loc = locationHelper.getCurrentLocationOrNull()
             val request = MeterRecordRequest(
                 pelangganId = pelangganId,
-                meterPreviousMonth = (angka - 1).coerceAtLeast(0),
+                meterPreviousMonth = previous,
                 meterCurrentMonth = angka,
                 recordedAt = tanggal,
                 gpsLatitude = loc?.latitude,
@@ -310,7 +310,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun submitKeluhan(judul: String, deskripsi: String, kategori: String, prioritas: String, pelangganId: Long? = null) {
+    fun submitKeluhan(judul: String, deskripsi: String, kategori: String, prioritas: String, lokasiText: String, pelangganId: Long? = null) {
         safeLaunch("submitKeluhan") {
             if (judul.isBlank() || deskripsi.isBlank()) {
                 setMessage("Judul dan deskripsi keluhan wajib diisi.")
@@ -327,7 +327,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 latitude = loc?.latitude,
                 longitude = loc?.longitude,
                 pelapor = _me.value?.name ?: "Petugas Lapangan",
-                noHp = _me.value?.noHp?.ifBlank { null } ?: "0000"
+                noHp = _me.value?.noHp?.ifBlank { null } ?: "0000",
+                lokasiText = lokasiText.ifBlank { null }
             )
             when (val result = repository.createKeluhan(request)) {
                 is ResultState.Success -> {

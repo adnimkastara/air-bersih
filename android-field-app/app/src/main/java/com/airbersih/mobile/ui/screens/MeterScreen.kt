@@ -117,7 +117,7 @@ fun MeterScreen(vm: MainViewModel) {
                             val id = selectedId
                             val valAngka = angka.toIntOrNull()
                             if (id != null && valAngka != null) {
-                                vm.submitMeter(id, valAngka)
+                                vm.submitMeter(id, valAngka, previous)
                                 angka = ""
                             } else {
                                 vm.showMessage("Pilih pelanggan dan isi angka meter yang valid.")

@@ -22,15 +22,23 @@ import com.airbersih.mobile.viewmodel.MainViewModel
 fun KeluhanScreen(vm: MainViewModel) {
     var judul by remember { mutableStateOf("") }
     var deskripsi by remember { mutableStateOf("") }
+    var lokasiText by remember { mutableStateOf("") }
     var kategori by remember { mutableStateOf("gangguan") }
     var prioritas by remember { mutableStateOf("sedang") }
     var expanded by remember { mutableStateOf(false) }
     var selectedPelangganId by remember { mutableStateOf<Long?>(null) }
     var pelangganLabel by remember { mutableStateOf("Umum / Tanpa Pelanggan") }
 
+    var katExpanded by remember { mutableStateOf(false) }
+    var prioExpanded by remember { mutableStateOf(false) }
+
+    val kategoriOptions = mapOf("gangguan" to "Gangguan Teknis", "keluhan" to "Keluhan Layanan")
+    val prioritasOptions = mapOf("rendah" to "Rendah", "sedang" to "Sedang", "tinggi" to "Tinggi")
+
     val items by vm.keluhan.collectAsState()
     val pelanggan by vm.pelanggan.collectAsState()
     val loading by vm.loadingMenu.collectAsState()
+    val coordinates by vm.customerCoordinates.collectAsState()
 
     LaunchedEffect(Unit) { vm.loadKeluhan(); vm.loadPelanggan() }
 
@@ -89,6 +97,37 @@ fun KeluhanScreen(vm: MainViewModel) {
                         colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                     )
 
+                    OutlinedTextField(
+                        value = lokasiText,
+                        onValueChange = { lokasiText = it },
+                        label = { Text("Lokasi Gangguan (Alamat/Patokan)") },
+                        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp)).padding(12.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Koordinat GPS Tersimpan:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                            Text(
+                                if (coordinates.first != null) "${coordinates.first}, ${coordinates.second}" else "Belum diambil",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (coordinates.first != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                            )
+                        }
+                        IconButton(
+                            onClick = { vm.captureCustomerLocation() },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp)).size(36.dp)
+                        ) {
+                            Icon(Icons.Default.Place, contentDescription = "Ambil GPS", tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                    }
+
                     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                         OutlinedTextField(
                             value = pelangganLabel,
@@ -118,28 +157,53 @@ fun KeluhanScreen(vm: MainViewModel) {
                     }
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = kategori,
-                            onValueChange = { kategori = it },
-                            label = { Text("Kategori") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                        )
-                        OutlinedTextField(
-                            value = prioritas,
-                            onValueChange = { prioritas = it },
-                            label = { Text("Prioritas") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                        )
+                        ExposedDropdownMenuBox(expanded = katExpanded, onExpandedChange = { katExpanded = !katExpanded }, modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = kategoriOptions[kategori] ?: kategori,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = katExpanded) },
+                                label = { Text("Kategori") },
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                            )
+                            ExposedDropdownMenu(expanded = katExpanded, onDismissRequest = { katExpanded = false }) {
+                                kategoriOptions.forEach { (key, label) ->
+                                    DropdownMenuItem(text = { Text(label) }, onClick = {
+                                        kategori = key
+                                        katExpanded = false
+                                    })
+                                }
+                            }
+                        }
+
+                        ExposedDropdownMenuBox(expanded = prioExpanded, onExpandedChange = { prioExpanded = !prioExpanded }, modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = prioritasOptions[prioritas] ?: prioritas,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = prioExpanded) },
+                                label = { Text("Prioritas") },
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                            )
+                            ExposedDropdownMenu(expanded = prioExpanded, onDismissRequest = { prioExpanded = false }) {
+                                prioritasOptions.forEach { (key, label) ->
+                                    DropdownMenuItem(text = { Text(label) }, onClick = {
+                                        prioritas = key
+                                        prioExpanded = false
+                                    })
+                                }
+                            }
+                        }
                     }
 
                     Button(
                         onClick = {
-                            vm.submitKeluhan(judul, deskripsi, kategori, prioritas, selectedPelangganId)
-                            judul = ""; deskripsi = ""
+                            vm.submitKeluhan(judul, deskripsi, kategori, prioritas, lokasiText, selectedPelangganId)
+                            judul = ""; deskripsi = ""; lokasiText = ""
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp)
