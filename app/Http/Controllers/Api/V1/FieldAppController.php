@@ -17,6 +17,7 @@ use App\Services\GenerateCustomerCodeService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -479,50 +480,55 @@ class FieldAppController extends Controller
 
     public function monitoringPeta(Request $request)
     {
-        $gpsLat = $request->query('gps_latitude');
-        $gpsLng = $request->query('gps_longitude');
-        $desaId = $request->user()->isKecamatanLevel() ? null : $request->user()->desa_id;
+        try {
+            $gpsLat = $request->query('gps_latitude');
+            $gpsLng = $request->query('gps_longitude');
+            $desaId = $request->user()->isKecamatanLevel() ? null : $request->user()->desa_id;
 
-        $pelanggans = collect();
-        // Cek apakah tabel dan kolom ada untuk menghindari error 500 jika migrasi belum lengkap
-        if (Schema::hasTable('pelanggans')) {
-            $query = Pelanggan::query()
-                ->when($desaId, fn ($q) => $q->where('desa_id', $desaId));
+            $pelanggans = collect();
+            if (Schema::hasTable('pelanggans')) {
+                $query = Pelanggan::query()
+                    ->when($desaId, fn ($q) => $q->where('desa_id', $desaId));
 
-            if (Schema::hasColumns('pelanggans', ['latitude', 'longitude'])) {
-                $query->whereNotNull('latitude')->whereNotNull('longitude');
-                $pelanggans = $query->get(['id', 'name', 'kode_pelanggan', 'latitude', 'longitude']);
+                if (Schema::hasColumns('pelanggans', ['latitude', 'longitude'])) {
+                    $query->whereNotNull('latitude')->whereNotNull('longitude');
+                    $pelanggans = $query->get(['id', 'name', 'kode_pelanggan', 'latitude', 'longitude']);
+                }
             }
-        }
 
-        $keluhans = collect();
-        if (Schema::hasTable('laporan_gangguans')) {
-            if (Schema::hasColumns('laporan_gangguans', ['latitude', 'longitude'])) {
-                $query = LaporanGangguan::query()
-                    ->when($desaId, fn ($q) => $q->where('desa_id', $desaId))
-                    ->whereIn('status_penanganan', ['baru', 'diproses'])
-                    ->whereNotNull('latitude')
-                    ->whereNotNull('longitude');
+            $keluhans = collect();
+            if (Schema::hasTable('laporan_gangguans')) {
+                if (Schema::hasColumns('laporan_gangguans', ['latitude', 'longitude'])) {
+                    $query = LaporanGangguan::query()
+                        ->when($desaId, fn ($q) => $q->where('desa_id', $desaId))
+                        ->whereIn('status_penanganan', ['baru', 'diproses'])
+                        ->whereNotNull('latitude')
+                        ->whereNotNull('longitude');
 
-                $availableColumns = Schema::getColumnListing('laporan_gangguans');
-                $columns = array_intersect(['id', 'judul', 'latitude', 'longitude', 'kode_keluhan', 'status_penanganan'], $availableColumns);
+                    $availableColumns = Schema::getColumnListing('laporan_gangguans');
+                    // Ensure the keys are reset using array_values so Eloquent's get() parses it as simple list
+                    $columns = array_values(array_intersect(['id', 'judul', 'latitude', 'longitude', 'kode_keluhan', 'status_penanganan'], $availableColumns));
 
-                $keluhans = $query->get($columns);
+                    $keluhans = $query->get($columns);
+                }
             }
-        }
 
-        return $this->successResponse('Data monitoring berhasil diambil.', [
-            'user_current_location' => [
-                'latitude' => $gpsLat,
-                'longitude' => $gpsLng,
-            ],
-            'fallback_center' => [
-                'latitude' => $gpsLat ?: -7.6189,
-                'longitude' => $gpsLng ?: 110.9507,
-            ],
-            'pelanggans' => $pelanggans,
-            'keluhans' => $keluhans,
-        ]);
+            return $this->successResponse('Data monitoring berhasil diambil.', [
+                'user_current_location' => [
+                    'latitude' => $gpsLat,
+                    'longitude' => $gpsLng,
+                ],
+                'fallback_center' => [
+                    'latitude' => $gpsLat ?: -7.6189,
+                    'longitude' => $gpsLng ?: 110.9507,
+                ],
+                'pelanggans' => $pelanggans,
+                'keluhans' => $keluhans,
+            ]);
+        } catch (\Throwable $th) {
+            \Illuminate\Support\Facades\Log::error('Monitoring Map Error: ' . $th->getMessage(), ['trace' => $th->getTraceAsString()]);
+            return $this->errorResponse('Terjadi kendala saat memuat data monitoring: ' . $th->getMessage(), 500);
+        }
     }
 
     private function normalizePaymentMethod(?string $raw): ?string
