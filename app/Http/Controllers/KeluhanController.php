@@ -138,11 +138,17 @@ class KeluhanController extends Controller
         }
         $data = $request->validate($rules);
 
-        $laporanGangguan->fill($data);
+        $updatePayload = $data;
+
         if ($data['status_penanganan'] === 'selesai') {
-            $laporanGangguan->tanggal_selesai = now();
-            $laporanGangguan->ditangani_oleh = $request->user()->id;
+            $updatePayload['tanggal_selesai'] = now();
+            $updatePayload['ditangani_oleh'] = $request->user()->id;
+        } else {
+            $updatePayload['tanggal_selesai'] = null;
+            $updatePayload['ditangani_oleh'] = null;
         }
+
+        $laporanGangguan->fill(LaporanGangguan::filterExistingColumns($updatePayload));
         $laporanGangguan->save();
 
         return back()->with('status', 'Status keluhan diperbarui.');
