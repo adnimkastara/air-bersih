@@ -458,7 +458,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 is ResultState.Error -> {
                     _monitoring.value = MonitoringMapResponse()
                     val detailedError = when {
-                        result.code == 500 -> "Server (500): Kendala teknis pada layanan peta. Sedang ditangani."
+                        result.code == 500 -> "Server (500): ${result.message}"
                         result.code == 404 -> "Layanan peta tidak ditemukan di server (404)."
                         else -> result.message
                     }

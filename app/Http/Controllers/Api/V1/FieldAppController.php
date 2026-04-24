@@ -487,12 +487,24 @@ class FieldAppController extends Controller
 
             $pelanggans = collect();
             if (Schema::hasTable('pelanggans')) {
-                $query = Pelanggan::query()
-                    ->when($desaId, fn ($q) => $q->where('desa_id', $desaId));
+                $query = Pelanggan::query();
+
+                if ($desaId !== null && Schema::hasColumn('pelanggans', 'desa_id')) {
+                    $query->where('desa_id', $desaId);
+                }
 
                 if (Schema::hasColumns('pelanggans', ['latitude', 'longitude'])) {
                     $query->whereNotNull('latitude')->whereNotNull('longitude');
-                    $pelanggans = $query->get(['id', 'name', 'kode_pelanggan', 'latitude', 'longitude']);
+
+                    $availablePelangganColumns = Schema::getColumnListing('pelanggans');
+                    $pelangganColumns = [];
+                    foreach (['id', 'name', 'kode_pelanggan', 'latitude', 'longitude'] as $col) {
+                        if (in_array($col, $availablePelangganColumns)) {
+                            $pelangganColumns[] = $col;
+                        }
+                    }
+
+                    $pelanggans = $query->get($pelangganColumns);
                 }
             }
 
@@ -500,16 +512,30 @@ class FieldAppController extends Controller
             if (Schema::hasTable('laporan_gangguans')) {
                 if (Schema::hasColumns('laporan_gangguans', ['latitude', 'longitude'])) {
                     $query = LaporanGangguan::query()
-                        ->when($desaId, fn ($q) => $q->where('desa_id', $desaId))
-                        ->whereIn('status_penanganan', ['baru', 'diproses'])
                         ->whereNotNull('latitude')
                         ->whereNotNull('longitude');
 
-                    $availableColumns = Schema::getColumnListing('laporan_gangguans');
-                    // Ensure the keys are reset using array_values so Eloquent's get() parses it as simple list
-                    $columns = array_values(array_intersect(['id', 'judul', 'latitude', 'longitude', 'kode_keluhan', 'status_penanganan'], $availableColumns));
+                    // Hapus when/fn yang bisa menyebabkan error closure / binding
+                    if ($desaId !== null) {
+                        if (Schema::hasColumn('laporan_gangguans', 'desa_id')) {
+                            $query->where('desa_id', $desaId);
+                        }
+                    }
 
-                    $keluhans = $query->get($columns);
+                    if (Schema::hasColumn('laporan_gangguans', 'status_penanganan')) {
+                        $query->whereIn('status_penanganan', ['baru', 'diproses']);
+                    }
+
+                    // Tentukan secara eksplisit kolom yang aman
+                    $availableColumns = Schema::getColumnListing('laporan_gangguans');
+                    $selectColumns = [];
+                    foreach (['id', 'judul', 'latitude', 'longitude', 'kode_keluhan', 'status_penanganan'] as $col) {
+                        if (in_array($col, $availableColumns)) {
+                            $selectColumns[] = $col;
+                        }
+                    }
+
+                    $keluhans = $query->get($selectColumns);
                 }
             }
 
