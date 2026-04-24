@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.airbersih.mobile.model.Keluhan
 import com.airbersih.mobile.model.MonitoringMapResponse
 import com.airbersih.mobile.model.Pelanggan
+import com.airbersih.mobile.utils.MenuLogger
 import com.airbersih.mobile.viewmodel.MainViewModel
 import java.util.Locale
 
@@ -35,6 +37,8 @@ import java.util.Locale
 @Composable
 fun MonitoringScreen(vm: MainViewModel) {
     val monitoring by vm.monitoring.collectAsState()
+    val monitoringError by vm.monitoringError.collectAsState()
+    val loading by vm.loadingMenu.collectAsState()
 
     LaunchedEffect(Unit) { vm.loadMonitoring() }
 
@@ -45,29 +49,55 @@ fun MonitoringScreen(vm: MainViewModel) {
             )
         }
     ) { paddingValues ->
-        if (monitoring == null) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator()
-                Text(
-                    text = "Memuat data monitoring...",
-                    modifier = Modifier.padding(top = 12.dp),
-                    style = MaterialTheme.typography.bodyMedium
+        when {
+            loading == "monitoring" -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Text(
+                        text = "Memuat data monitoring...",
+                        modifier = Modifier.padding(top = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            monitoring == null -> {
+                ErrorState("Data monitoring belum tersedia.", onRetry = { vm.loadMonitoring() }, paddingValues = paddingValues)
+            }
+
+            monitoringError != null -> {
+                ErrorState(monitoringError ?: "Gagal memuat monitoring.", onRetry = { vm.loadMonitoring() }, paddingValues = paddingValues)
+            }
+
+            else -> {
+                LeafletMonitoringWebView(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    monitoring = monitoring!!
                 )
             }
-        } else {
-            LeafletMonitoringWebView(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                monitoring = monitoring!!
-            )
         }
+    }
+}
+
+@Composable
+private fun ErrorState(message: String, onRetry: () -> Unit, paddingValues: androidx.compose.foundation.layout.PaddingValues) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(message)
+        Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) { Text("Muat ulang") }
     }
 }
 
@@ -90,6 +120,7 @@ private fun LeafletMonitoringWebView(
                 settings.loadsImagesAutomatically = true
                 webChromeClient = WebChromeClient()
                 webViewClient = WebViewClient()
+                MenuLogger.mapFlow("webview_ready=true")
                 loadDataWithBaseURL(
                     "https://localhost/",
                     htmlContent,
@@ -102,6 +133,7 @@ private fun LeafletMonitoringWebView(
         update = { view ->
             htmlContent = buildLeafletHtml(monitoring)
             view.loadDataWithBaseURL("https://localhost/", htmlContent, "text/html", "UTF-8", null)
+            MenuLogger.mapFlow("json_sent_to_leaflet=true")
         }
     )
 }

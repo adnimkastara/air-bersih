@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -46,10 +47,22 @@ fun AppNavGraph(
 ) {
     val nav = rememberNavController()
     val loggedIn by vm.isLoggedIn.collectAsState()
+    val context = LocalContext.current
+    val exitApp by vm.exitAppEvent.collectAsState()
 
     fun navigateMenu(menuName: String, route: String) {
         MenuLogger.nav("menu_clicked=$menuName target_route=$route")
         nav.navigate(route)
+    }
+
+    LaunchedEffect(exitApp) {
+        if (!exitApp) return@LaunchedEffect
+        MenuLogger.session("logout_exit_app requested=true")
+        (context as? ComponentActivity)?.let { activity ->
+            activity.finishAffinity()
+            activity.finishAndRemoveTask()
+        }
+        vm.onExitAppHandled()
     }
 
     LaunchedEffect(loggedIn) {

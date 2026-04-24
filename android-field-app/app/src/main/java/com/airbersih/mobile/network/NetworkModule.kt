@@ -36,6 +36,8 @@ object NetworkModule {
             .build()
 
         val moshi = Moshi.Builder()
+            .add(LenientLongAdapter())
+            .add(LenientDoubleAdapter())
             .addLast(KotlinJsonAdapterFactory())
             .build()
 

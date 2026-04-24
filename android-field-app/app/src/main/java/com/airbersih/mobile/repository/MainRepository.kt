@@ -4,7 +4,9 @@ import com.airbersih.mobile.data.TokenManager
 import com.airbersih.mobile.model.*
 import com.airbersih.mobile.network.ApiService
 import com.airbersih.mobile.utils.MenuLogger
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.Moshi
 import kotlinx.coroutines.CancellationException
 import okhttp3.ResponseBody
 import okio.EOFException
@@ -17,6 +19,8 @@ class MainRepository(
     private val api: ApiService,
     private val tokenManager: TokenManager
 ) {
+    private val moshi = Moshi.Builder().build()
+    private val mapAdapter: JsonAdapter<Map<String, Any?>> = moshi.adapter<Map<String, Any?>>(Map::class.java) as JsonAdapter<Map<String, Any?>>
 
     suspend fun login(email: String, password: String): ResultState<LoginResponse> =
         safeApiCall("login", "POST /login") {
@@ -60,18 +64,20 @@ class MainRepository(
     suspend fun pelanggan(query: String?, desa: String?): ResultState<List<Pelanggan>> =
         safeApiCall("pelanggan", "GET /pelanggan") {
             MenuLogger.api("endpoint=GET /pelanggan query='${query.orEmpty()}' desa='${desa.orEmpty()}'")
-            handleResponse(api.pelanggan(query, desa), "GET /pelanggan") { payload -> payload.data ?: emptyList() }
+            handleResponse(api.pelanggan(query, desa), "GET /pelanggan") { payload ->
+                payload.data?.data ?: emptyList()
+            }
         }
 
     suspend fun pelangganDetail(id: Long) = safeApiCall("pelangganDetail", "GET /pelanggan/{id}") {
-        handleResponse(api.pelangganDetail(id), "GET /pelanggan/$id")
+        handleResponse(api.pelangganDetail(id), "GET /pelanggan/$id") { it.data ?: throw IllegalStateException("Data pelanggan kosong") }
     }
 
     suspend fun createPelanggan(request: PelangganCreateRequest): ResultState<Pelanggan> =
         safeApiCall("createPelanggan", "POST /pelanggan") {
-            MenuLogger.api("endpoint=POST /pelanggan name=${request.name} meter=${request.nomorMeter}")
+            MenuLogger.payload("feature=tambah_pelanggan endpoint=POST /pelanggan name=${request.name} meter=${request.nomorMeter} desa_id=${request.desaId} kecamatan_id=${request.kecamatanId} assigned_petugas_id=${request.assignedPetugasId} has_latlng=${request.latitude != null && request.longitude != null}")
             handleResponse(api.createPelanggan(request), "POST /pelanggan") { envelope ->
-                envelope.data ?: throw IllegalStateException("Data pelanggan kosong")
+                envelope.data ?: Pelanggan(nama = request.name, alamat = request.address, desaId = request.desaId, kecamatanId = request.kecamatanId, assignedPetugasId = request.assignedPetugasId, latitude = request.latitude, longitude = request.longitude, status = request.status)
             }
         }
 
@@ -81,7 +87,7 @@ class MainRepository(
         }
 
     suspend fun createMeter(request: MeterRecordRequest) = safeApiCall("createMeter", "POST /meter-records") {
-        MenuLogger.api("endpoint=POST /meter-records pelangganId=${request.pelangganId} recordedAt=${request.recordedAt}")
+        MenuLogger.payload("endpoint=POST /meter-records pelangganId=${request.pelangganId} recordedAt=${request.recordedAt} gps=${request.gpsLatitude ?: "-"},${request.gpsLongitude ?: "-"}")
         handleResponse(api.createMeter(request), "POST /meter-records")
     }
 
@@ -121,13 +127,13 @@ class MainRepository(
         }
 
     suspend fun createKeluhan(request: KeluhanRequest) = safeApiCall("createKeluhan", "POST /keluhan") {
-        MenuLogger.api("endpoint=POST /keluhan jenis=${request.jenisLaporan} prioritas=${request.prioritas}")
+        MenuLogger.keluhanPayload("endpoint=POST /keluhan jenis=${request.jenisLaporan} prioritas=${request.prioritas} pelanggan_id=${request.pelangganId ?: "null"} has_latlng=${request.latitude != null && request.longitude != null} pelapor=${request.pelapor ?: "-"} no_hp=${request.noHp.take(4)}****")
         handleResponse(api.createKeluhan(request), "POST /keluhan")
     }
 
     suspend fun monitoringMap(gpsLatitude: Double?, gpsLongitude: Double?): ResultState<MonitoringMapResponse> =
         safeApiCall("monitoringMap", "GET /monitoring/peta") {
-            MenuLogger.api("endpoint=GET /monitoring/peta gps=${gpsLatitude ?: "-"},${gpsLongitude ?: "-"}")
+            MenuLogger.mapFlow("MAP_INIT endpoint=GET /monitoring/peta gps=${gpsLatitude ?: "-"},${gpsLongitude ?: "-"}")
             handleResponse(api.monitoringMap(gpsLatitude, gpsLongitude), "GET /monitoring/peta") { envelope ->
                 envelope.data ?: MonitoringMapResponse()
             }
@@ -190,8 +196,15 @@ class MainRepository(
         return runCatching {
             val body = errorBody?.string().orEmpty().trim()
             if (body.isBlank()) return@runCatching null
-            val messageRegex = "\"message\"\\s*:\\s*\"([^\"]+)\"".toRegex()
-            messageRegex.find(body)?.groupValues?.getOrNull(1)
+            val parsed = mapAdapter.fromJson(body)
+            val topMessage = parsed?.get("message") as? String
+            val errors = parsed?.get("errors")
+            val firstError = when (errors) {
+                is Map<*, *> -> errors.values.firstOrNull()?.toString()
+                is List<*> -> errors.firstOrNull()?.toString()
+                else -> null
+            }
+            listOfNotNull(topMessage, firstError).firstOrNull { it.isNotBlank() }
         }.getOrNull()
     }
 }
