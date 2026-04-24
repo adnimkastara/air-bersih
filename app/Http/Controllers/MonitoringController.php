@@ -123,6 +123,7 @@ class MonitoringController extends Controller
             $payload['prioritas'] = $data['prioritas'] ?? 'sedang';
         }
 
+        $payload = LaporanGangguan::filterExistingColumns($payload);
         $laporan = LaporanGangguan::create($payload);
 
         $this->logActivity(
