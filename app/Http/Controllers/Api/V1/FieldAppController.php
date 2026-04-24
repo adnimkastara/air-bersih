@@ -423,6 +423,9 @@ class FieldAppController extends Controller
         $data['kecamatan_id'] = $pelanggan?->kecamatan_id ?? $request->user()->kecamatan_id;
         $data['pelapor'] = $this->resolvePelaporName($data['pelapor'] ?? null, $pelanggan?->name);
         $data['no_hp'] = $data['no_hp'] ?: ($pelanggan?->phone ?? null);
+        if (! LaporanGangguan::hasPrioritasColumn()) {
+            unset($data['prioritas']);
+        }
         $laporan = LaporanGangguan::create($data);
         $this->sendPetugasNotifications($laporan);
 

@@ -101,7 +101,7 @@ class MonitoringController extends Controller
             ? $request->file('foto_gangguan')->store('gangguan', 'public')
             : null;
 
-        $laporan = LaporanGangguan::create([
+        $payload = [
             'pelanggan_id' => $data['pelanggan_id'],
             'kode_keluhan' => 'KLH-'.now()->format('Ymd').'-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT),
             'desa_id' => $pelanggan->desa_id,
@@ -110,7 +110,6 @@ class MonitoringController extends Controller
             'pelapor' => $pelanggan->name,
             'no_hp' => $data['no_hp'] ?: $pelanggan->phone,
             'jenis_laporan' => $data['jenis_laporan'],
-            'prioritas' => $data['prioritas'] ?? 'sedang',
             'judul' => $data['judul'],
             'deskripsi' => $data['deskripsi'],
             'lokasi_text' => $data['lokasi_text'] ?? null,
@@ -119,7 +118,12 @@ class MonitoringController extends Controller
             'status_penanganan' => $data['status_penanganan'],
             'foto_path' => $fotoPath,
             'reported_at' => Carbon::now(),
-        ]);
+        ];
+        if (LaporanGangguan::hasPrioritasColumn()) {
+            $payload['prioritas'] = $data['prioritas'] ?? 'sedang';
+        }
+
+        $laporan = LaporanGangguan::create($payload);
 
         $this->logActivity(
             $request,
