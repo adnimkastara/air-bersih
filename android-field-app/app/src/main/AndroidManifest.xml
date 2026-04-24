@@ -12,11 +12,7 @@
         android:roundIcon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AirBersih">
-
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${googleMapsApiKey}" />
+        android:theme="@style/Theme.AirBersih.Splash">
 
         <activity
             android:name=".MainActivity"

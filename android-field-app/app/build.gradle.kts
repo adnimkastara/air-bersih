@@ -20,8 +20,6 @@ android {
         buildConfigField("String", "BASE_URL_DEV", "\"https://dev-api.airbersih.local/\"")
         buildConfigField("String", "BASE_URL_PROD", "\"https://airbersih.pelayanan.id/api/v1/\"")
         buildConfigField("Boolean", "USE_PROD", "true")
-        val mapsApiKey = providers.gradleProperty("MAPS_API_KEY").orElse("").get()
-        manifestPlaceholders["googleMapsApiKey"] = mapsApiKey
     }
 
     buildTypes {
@@ -68,6 +66,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("androidx.activity:activity-compose:1.9.2")
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.navigation:navigation-compose:2.8.2")
 
@@ -90,8 +89,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation("com.google.android.gms:play-services-maps:19.0.0")
-    implementation("com.google.maps.android:maps-compose:6.1.0")
 
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
