@@ -1,0 +1,24 @@
+# Gradle files
+.gradle/
+build/
+/*/build/
+
+# IntelliJ/Android Studio
+.idea/
+*.iml
+*.iws
+
+# Local configuration
+local.properties
+
+# Log files
+*.log
+
+# Output
+captures/
+
+# OS files
+.DS_Store
+
+# Explicitly include gradlew but ignore its wrapper if preferred (though usually kept)
+# Keeping gradlew and gradle/ is standard practice.
