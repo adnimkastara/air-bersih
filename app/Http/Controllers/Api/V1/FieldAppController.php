@@ -426,6 +426,7 @@ class FieldAppController extends Controller
         if (! LaporanGangguan::hasPrioritasColumn()) {
             unset($data['prioritas']);
         }
+        $data = LaporanGangguan::filterExistingColumns($data);
         $laporan = LaporanGangguan::create($data);
         $this->sendPetugasNotifications($laporan);
 

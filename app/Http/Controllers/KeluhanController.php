@@ -106,6 +106,7 @@ class KeluhanController extends Controller
         }
 
         unset($data['foto_gangguan']);
+        $data = LaporanGangguan::filterExistingColumns($data);
         $laporan = LaporanGangguan::create($data);
         $this->sendPetugasNotifications($laporan);
 

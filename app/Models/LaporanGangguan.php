@@ -102,6 +102,19 @@ class LaporanGangguan extends Model
         return self::hasColumn('prioritas');
     }
 
+    public static function filterExistingColumns(array $attributes): array
+    {
+        $filtered = [];
+
+        foreach ($attributes as $column => $value) {
+            if (self::hasColumn($column)) {
+                $filtered[$column] = $value;
+            }
+        }
+
+        return $filtered;
+    }
+
     public static function hasColumn(string $column): bool
     {
         if (array_key_exists($column, self::$columnExistenceCache)) {
