@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class LaporanGangguan extends Model
 {
@@ -74,14 +76,22 @@ class LaporanGangguan extends Model
             return self::$hasCoordinateColumns;
         }
 
-        if (! Schema::hasTable('laporan_gangguans')) {
+        try {
+            if (! Schema::hasTable('laporan_gangguans')) {
+                self::$hasCoordinateColumns = false;
+
+                return self::$hasCoordinateColumns;
+            }
+
+            self::$hasCoordinateColumns = Schema::hasColumn('laporan_gangguans', 'latitude')
+                && Schema::hasColumn('laporan_gangguans', 'longitude');
+        } catch (Throwable $exception) {
+            Log::warning('Failed to inspect laporan_gangguans coordinate columns.', [
+                'error' => $exception->getMessage(),
+            ]);
+
             self::$hasCoordinateColumns = false;
-
-            return self::$hasCoordinateColumns;
         }
-
-        self::$hasCoordinateColumns = Schema::hasColumn('laporan_gangguans', 'latitude')
-            && Schema::hasColumn('laporan_gangguans', 'longitude');
 
         return self::$hasCoordinateColumns;
     }
