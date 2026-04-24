@@ -448,18 +448,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val total = customerCount + issueCount
                     MenuLogger.mapFlow("MAP_DATA_RECEIVED pelanggan=$customerCount keluhan=$issueCount")
                     MenuLogger.mapMarkers("MAP_MARKERS pelanggan=$customerCount keluhan=$issueCount total=$total")
+
                     if (total == 0) {
-                        _monitoringError.value = "Tidak ada data monitoring"
-                        setMessage("Tidak ada data monitoring")
+                        MenuLogger.mapFlow("MAP_EMPTY")
                     } else {
                         MenuLogger.mapFlow("MAP_LOAD_SUCCESS markers=$total")
                     }
                 }
                 is ResultState.Error -> {
                     _monitoring.value = MonitoringMapResponse()
-                    _monitoringError.value = result.message
-                    MenuLogger.mapFlow("MAP_LOAD_ERROR message=${result.message}")
-                    if (!handleUnauthorized(result)) setMessage(result.message)
+                    val detailedError = when {
+                        result.code == 500 -> "Server (500): Kendala teknis pada layanan peta. Sedang ditangani."
+                        result.code == 404 -> "Layanan peta tidak ditemukan di server (404)."
+                        else -> result.message
+                    }
+                    _monitoringError.value = detailedError
+                    MenuLogger.mapFlow("MAP_LOAD_ERROR message=${result.message} code=${result.code}")
+                    if (!handleUnauthorized(result)) setMessage(detailedError)
                 }
                 ResultState.Loading -> Unit
             }

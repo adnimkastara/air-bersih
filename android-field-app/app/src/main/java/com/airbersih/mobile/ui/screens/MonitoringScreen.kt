@@ -22,6 +22,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -32,6 +34,17 @@ import com.airbersih.mobile.model.Pelanggan
 import com.airbersih.mobile.utils.MenuLogger
 import com.airbersih.mobile.viewmodel.MainViewModel
 import java.util.Locale
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,21 +71,29 @@ fun MonitoringScreen(vm: MainViewModel) {
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     Text(
-                        text = "Memuat data monitoring...",
-                        modifier = Modifier.padding(top = 12.dp),
+                        text = "Menghubungkan ke server...",
+                        modifier = Modifier.padding(top = 16.dp),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
 
-            monitoring == null -> {
-                ErrorState("Data monitoring belum tersedia.", onRetry = { vm.loadMonitoring() }, paddingValues = paddingValues)
+            monitoringError != null -> {
+                ErrorState(
+                    monitoringError ?: "Gagal memuat monitoring.",
+                    onRetry = { vm.loadMonitoring() },
+                    paddingValues = paddingValues
+                )
             }
 
-            monitoringError != null -> {
-                ErrorState(monitoringError ?: "Gagal memuat monitoring.", onRetry = { vm.loadMonitoring() }, paddingValues = paddingValues)
+            monitoring == null -> {
+                ErrorState(
+                    "Data monitoring belum tersedia.",
+                    onRetry = { vm.loadMonitoring() },
+                    paddingValues = paddingValues
+                )
             }
 
             else -> {
@@ -92,12 +113,39 @@ private fun ErrorState(message: String, onRetry: () -> Unit, paddingValues: andr
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues),
+            .padding(paddingValues)
+            .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(message)
-        Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) { Text("Muat ulang") }
+        Icon(
+            Icons.Default.Warning,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.error
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Waduh! Ada Kendala",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            message,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary
+        )
+        Button(
+            onClick = onRetry,
+            modifier = Modifier.padding(top = 24.dp).fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Refresh, contentDescription = null)
+            Spacer(Modifier.padding(4.dp))
+            Text("Coba Lagi")
+        }
     }
 }
 

@@ -391,14 +391,24 @@ class FieldAppController extends Controller
             return $this->errorResponse('Pembayaran duplikat terdeteksi untuk tagihan, nominal, metode, dan tanggal yang sama.', 422);
         }
 
-        $totalPaid = (float) Pembayaran::query()->where('tagihan_id', $tagihan->id)->sum('amount');
-        $remaining = max(0, (float) $tagihan->amount - $totalPaid);
+        $totalPaidBefore = (float) Pembayaran::query()->where('tagihan_id', $tagihan->id)->sum('amount');
+        $remaining = max(0, (float) $tagihan->amount - $totalPaidBefore);
 
-        if ((float) $data['amount'] > $remaining) {
+        if ((float) $data['amount'] > ($remaining + 0.01)) { // Allow 0.01 tolerance for rounding
             return $this->errorResponse("Nominal melebihi sisa tagihan. Sisa saat ini: {$remaining}", 422);
         }
 
-        $payment = Pembayaran::create($data);
+        $payment = DB::transaction(function () use ($data, $tagihan, $totalPaidBefore) {
+            $payment = Pembayaran::create($data);
+
+            $totalPaidAfter = $totalPaidBefore + (float) $data['amount'];
+            if ($totalPaidAfter >= ((float) $tagihan->amount - 0.01)) {
+                $tagihan->status = 'lunas';
+                $tagihan->save();
+            }
+
+            return $payment;
+        });
 
         return $this->successResponse('Pembayaran tersimpan.', $payment->load(['tagihan.pelanggan', 'petugas']), 201);
     }
@@ -473,31 +483,46 @@ class FieldAppController extends Controller
         $gpsLng = $request->query('gps_longitude');
         $desaId = $request->user()->isKecamatanLevel() ? null : $request->user()->desa_id;
 
-        $pelanggans = Pelanggan::query()
-            ->when($desaId, fn ($q) => $q->where('desa_id', $desaId))
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->get(['id', 'name', 'kode_pelanggan', 'latitude', 'longitude']);
+        $pelanggans = collect();
+        // Cek apakah tabel dan kolom ada untuk menghindari error 500 jika migrasi belum lengkap
+        if (Schema::hasTable('pelanggans')) {
+            $query = Pelanggan::query()
+                ->when($desaId, fn ($q) => $q->where('desa_id', $desaId));
 
-        $keluhans = LaporanGangguan::query()
-            ->when($desaId, fn ($q) => $q->where('desa_id', $desaId))
-            ->whereIn('status_penanganan', ['baru', 'diproses'])
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->get(['id', 'kode_keluhan', 'judul', 'status_penanganan', 'latitude', 'longitude']);
+            if (Schema::hasColumns('pelanggans', ['latitude', 'longitude'])) {
+                $query->whereNotNull('latitude')->whereNotNull('longitude');
+                $pelanggans = $query->get(['id', 'name', 'kode_pelanggan', 'latitude', 'longitude']);
+            }
+        }
+
+        $keluhans = collect();
+        if (Schema::hasTable('laporan_gangguans')) {
+            if (Schema::hasColumns('laporan_gangguans', ['latitude', 'longitude'])) {
+                $query = LaporanGangguan::query()
+                    ->when($desaId, fn ($q) => $q->where('desa_id', $desaId))
+                    ->whereIn('status_penanganan', ['baru', 'diproses'])
+                    ->whereNotNull('latitude')
+                    ->whereNotNull('longitude');
+
+                $availableColumns = Schema::getColumnListing('laporan_gangguans');
+                $columns = array_intersect(['id', 'judul', 'latitude', 'longitude', 'kode_keluhan', 'status_penanganan'], $availableColumns);
+
+                $keluhans = $query->get($columns);
+            }
+        }
 
         return $this->successResponse('Data monitoring berhasil diambil.', [
-                'user_current_location' => [
-                    'latitude' => $gpsLat,
-                    'longitude' => $gpsLng,
-                ],
-                'fallback_center' => [
-                    'latitude' => $gpsLat ?: -7.6189,
-                    'longitude' => $gpsLng ?: 110.9507,
-                ],
-                'pelanggans' => $pelanggans,
-                'keluhans' => $keluhans,
-            ]);
+            'user_current_location' => [
+                'latitude' => $gpsLat,
+                'longitude' => $gpsLng,
+            ],
+            'fallback_center' => [
+                'latitude' => $gpsLat ?: -7.6189,
+                'longitude' => $gpsLng ?: 110.9507,
+            ],
+            'pelanggans' => $pelanggans,
+            'keluhans' => $keluhans,
+        ]);
     }
 
     private function normalizePaymentMethod(?string $raw): ?string
