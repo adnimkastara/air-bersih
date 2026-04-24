@@ -4,10 +4,12 @@ import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.airbersih.mobile.navigation.AppNavGraph
+import com.airbersih.mobile.ui.theme.SipamTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -16,7 +18,9 @@ class MainActivity : ComponentActivity() {
     ) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         locationPermissionLauncher.launch(
             arrayOf(
@@ -26,7 +30,7 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            MaterialTheme {
+            SipamTheme {
                 Surface {
                     AppNavGraph()
                 }

@@ -1,3 +1,9 @@
 <resources>
     <style name="Theme.AirBersih" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <style name="Theme.AirBersih.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.AirBersih</item>
+    </style>
 </resources>
