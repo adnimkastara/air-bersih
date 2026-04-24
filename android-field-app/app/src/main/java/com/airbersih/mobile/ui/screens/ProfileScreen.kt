@@ -38,6 +38,7 @@ fun ProfileScreen(vm: MainViewModel) {
                 Text("Email: ${me?.email ?: "-"}")
                 Text("Role: ${me?.role?.name ?: "-"}")
                 Text("Desa: ${me?.desa?.name ?: "-"}")
+                Text("Kecamatan: ${me?.kecamatan?.name ?: "-"}")
             }
         }
         Card(modifier = Modifier.fillMaxWidth()) {

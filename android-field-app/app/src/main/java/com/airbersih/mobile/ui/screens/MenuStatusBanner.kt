@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import com.airbersih.mobile.viewmodel.MainViewModel
 
 @Composable
@@ -18,8 +19,9 @@ fun MenuStatusBanner(vm: MainViewModel) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (loading != null) {
             Text(
-                text = "Loading menu: $loading ...",
-                style = MaterialTheme.typography.bodySmall
+                text = "Memuat: $loading ...",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium
             )
         }
         message?.let {

@@ -33,8 +33,12 @@ data class User(
     val id: Long? = null,
     val name: String? = null,
     val email: String? = null,
+    @Json(name = "no_hp") val noHp: String? = null,
+    @Json(name = "desa_id") val desaId: Long? = null,
+    @Json(name = "kecamatan_id") val kecamatanId: Long? = null,
     val role: UserRole? = null,
-    val desa: UserDesa? = null
+    val desa: UserDesa? = null,
+    val kecamatan: UserKecamatan? = null
 )
 
 data class UserRole(
@@ -43,6 +47,12 @@ data class UserRole(
 )
 
 data class UserDesa(
+    val id: Long? = null,
+    val name: String? = null,
+    @Json(name = "kecamatan_id") val kecamatanId: Long? = null
+)
+
+data class UserKecamatan(
     val id: Long? = null,
     val name: String? = null
 )
@@ -59,6 +69,11 @@ data class Pelanggan(
     @Json(name = "name") val nama: String? = null,
     @Json(name = "address") val alamat: String? = null,
     @Json(name = "desa_id") val desaId: Long? = null,
+    @Json(name = "kecamatan_id") val kecamatanId: Long? = null,
+    @Json(name = "assigned_petugas_id") val assignedPetugasId: Long? = null,
+    @Json(name = "desa_name") val desaName: String? = null,
+    @Json(name = "kecamatan_name") val kecamatanName: String? = null,
+    @Json(name = "assigned_petugas_name") val assignedPetugasName: String? = null,
     val status: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null
@@ -70,7 +85,9 @@ data class PelangganCreateRequest(
     val phone: String? = null,
     val address: String,
     val dusun: String,
+    @Json(name = "kecamatan_id") val kecamatanId: Long? = null,
     @Json(name = "desa_id") val desaId: Long? = null,
+    @Json(name = "assigned_petugas_id") val assignedPetugasId: Long? = null,
     @Json(name = "jenis_pelanggan") val jenisPelanggan: String,
     @Json(name = "nomor_meter") val nomorMeter: String,
     val status: String = "aktif",
@@ -132,9 +149,10 @@ data class KeluhanRequest(
     val deskripsi: String,
     @Json(name = "jenis_laporan") val jenisLaporan: String,
     val prioritas: String,
+    @Json(name = "pelanggan_id") val pelangganId: Long? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
-    @Json(name = "no_hp") val noHp: String = "-",
+    @Json(name = "no_hp") val noHp: String,
     val pelapor: String? = null
 )
 
@@ -174,4 +192,13 @@ data class Pembayaran(
     @Json(name = "payment_method") val paymentMethod: String? = null,
     @Json(name = "paid_at") val paidAt: String? = null,
     val tagihan: Tagihan? = null
+)
+
+data class CustomerAutoFill(
+    val petugasId: Long? = null,
+    val petugasName: String = "-",
+    val desaId: Long? = null,
+    val desaName: String = "-",
+    val kecamatanId: Long? = null,
+    val kecamatanName: String = "-"
 )

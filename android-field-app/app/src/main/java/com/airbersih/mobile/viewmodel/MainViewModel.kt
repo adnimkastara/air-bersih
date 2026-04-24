@@ -27,8 +27,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
+    private val _exitAppEvent = MutableStateFlow(false)
+    val exitAppEvent: StateFlow<Boolean> = _exitAppEvent
+
     private val _me = MutableStateFlow<User?>(null)
     val me: StateFlow<User?> = _me
+
+    private val _customerAutoFill = MutableStateFlow(CustomerAutoFill())
+    val customerAutoFill: StateFlow<CustomerAutoFill> = _customerAutoFill
+
+    private val _customerCoordinates = MutableStateFlow<Pair<Double?, Double?>>(null to null)
+    val customerCoordinates: StateFlow<Pair<Double?, Double?>> = _customerCoordinates
 
     private val _dashboard = MutableStateFlow(DashboardSummary())
     val dashboard: StateFlow<DashboardSummary> = _dashboard
@@ -51,6 +60,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _monitoring = MutableStateFlow<MonitoringMapResponse?>(null)
     val monitoring: StateFlow<MonitoringMapResponse?> = _monitoring
 
+    private val _monitoringError = MutableStateFlow<String?>(null)
+    val monitoringError: StateFlow<String?> = _monitoringError
+
     private val _statusMessage = MutableStateFlow<String?>(null)
     val statusMessage: StateFlow<String?> = _statusMessage
 
@@ -61,7 +73,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         safeLaunch("initSession") {
             cachedToken = tokenManager.tokenFlow.first()
             _isLoggedIn.value = !cachedToken.isNullOrBlank()
-            MenuLogger.nav("session_restored loggedIn=${_isLoggedIn.value}")
+            MenuLogger.session("session_restored loggedIn=${_isLoggedIn.value}")
             if (_isLoggedIn.value) refreshInitialData()
         }
     }
@@ -83,6 +95,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     cachedToken = token
                     _isLoggedIn.value = true
                     _me.value = result.data.data.user
+                    applyCustomerAutoFill(_me.value)
                     MenuLogger.nav("login_success user=${_me.value?.email ?: "unknown"}")
                     refreshInitialData()
                 }
@@ -98,16 +111,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun logout() {
         safeLaunch("logout") {
             repository.logout()
-            MenuLogger.nav("logout_clicked")
+            MenuLogger.session("logout_clicked")
             resetSessionData()
+            _exitAppEvent.value = true
         }
+    }
+
+    fun onExitAppHandled() {
+        _exitAppEvent.value = false
     }
 
     fun refreshInitialData() {
         safeLaunch("refreshInitialData") {
-            MenuLogger.api("dashboard bootstrap start")
+            MenuLogger.feature("dashboard bootstrap start")
             repository.me().consume(
-                onSuccess = { _me.value = it },
+                onSuccess = {
+                    _me.value = it
+                    applyCustomerAutoFill(it)
+                },
                 onError = { setMessage(it.message) }
             )
             repository.dashboard().consume(
@@ -130,7 +151,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     MenuLogger.api("menu=pelanggan loaded_count=${result.data.size}")
                     if (result.data.isEmpty()) setMessage("Data pelanggan kosong untuk filter saat ini.")
                 }
-                is ResultState.Error -> if (!handleUnauthorized(result)) setMessage(result.message)
+                is ResultState.Error -> {
+                    MenuLogger.error("menu=pelanggan load_failed message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
                 ResultState.Loading -> Unit
             }
             clearLoading("pelanggan")
@@ -286,7 +310,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun submitKeluhan(judul: String, deskripsi: String, kategori: String, prioritas: String) {
+    fun submitKeluhan(judul: String, deskripsi: String, kategori: String, prioritas: String, pelangganId: Long? = null) {
         safeLaunch("submitKeluhan") {
             if (judul.isBlank() || deskripsi.isBlank()) {
                 setMessage("Judul dan deskripsi keluhan wajib diisi.")
@@ -294,26 +318,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             setLoading("keluhan")
             val loc = locationHelper.getCurrentLocationOrNull()
-            when (
-                val result = repository.createKeluhan(
-                    KeluhanRequest(
-                        judul = judul,
-                        deskripsi = deskripsi,
-                        jenisLaporan = kategori,
-                        prioritas = prioritas,
-                        latitude = loc?.latitude,
-                        longitude = loc?.longitude,
-                        pelapor = _me.value?.name
-                    )
-                )
-            ) {
+            val request = KeluhanRequest(
+                judul = judul,
+                deskripsi = deskripsi,
+                jenisLaporan = kategori,
+                prioritas = prioritas,
+                pelangganId = pelangganId,
+                latitude = loc?.latitude,
+                longitude = loc?.longitude,
+                pelapor = _me.value?.name ?: "Petugas Lapangan",
+                noHp = _me.value?.noHp?.ifBlank { null } ?: "0000"
+            )
+            when (val result = repository.createKeluhan(request)) {
                 is ResultState.Success -> {
                     MenuLogger.api("form_submit_success menu=keluhan")
                     setMessage(result.data.message ?: "Keluhan tersimpan.")
                     loadKeluhan()
                 }
                 is ResultState.Error -> {
-                    MenuLogger.error("form_submit_failed menu=keluhan message=${result.message}")
+                    MenuLogger.keluhanError("KELUHAN_ERROR code=${result.code} message=${result.message}")
                     if (!handleUnauthorized(result)) setMessage(result.message)
                 }
                 ResultState.Loading -> Unit
@@ -322,13 +345,33 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun captureCustomerLocation() {
+        safeLaunch("captureCustomerLocation") {
+            val loc = locationHelper.getCurrentLocationOrNull()
+            _customerCoordinates.value = loc?.latitude to loc?.longitude
+            MenuLogger.customerForm("gps_captured lat=${loc?.latitude ?: "-"} lng=${loc?.longitude ?: "-"}")
+            if (loc == null) {
+                setMessage("GPS belum tersedia. Pastikan lokasi aktif.")
+            }
+        }
+    }
+
     fun createPelanggan(request: PelangganCreateRequest) {
         safeLaunch("createPelanggan") {
-            val payload = request.copy(desaId = request.desaId ?: _me.value?.desa?.id)
+            val autoFill = _customerAutoFill.value
+            val coords = _customerCoordinates.value
+            val payload = request.copy(
+                desaId = request.desaId ?: autoFill.desaId,
+                kecamatanId = request.kecamatanId ?: autoFill.kecamatanId,
+                assignedPetugasId = request.assignedPetugasId ?: autoFill.petugasId,
+                latitude = request.latitude ?: coords.first,
+                longitude = request.longitude ?: coords.second
+            )
+            MenuLogger.customerForm("submit name=${payload.name} desa_id=${payload.desaId} kecamatan_id=${payload.kecamatanId} petugas_id=${payload.assignedPetugasId} lat=${payload.latitude ?: "-"} lng=${payload.longitude ?: "-"}")
             when (val result = repository.createPelanggan(payload)) {
                 is ResultState.Success -> {
                     MenuLogger.api("form_submit_success menu=pelanggan action=create")
-                    setMessage("Pelanggan ${result.data.nama ?: ""} berhasil ditambahkan.")
+                    setMessage("Pelanggan ${result.data.nama ?: payload.name} berhasil ditambahkan.")
                     loadPelanggan()
                 }
                 is ResultState.Error -> {
@@ -394,19 +437,48 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun loadMonitoring() {
         safeLaunch("loadMonitoring") {
             setLoading("monitoring")
+            _monitoringError.value = null
+            MenuLogger.mapFlow("MAP_INIT loadMonitoring_called")
             val loc = locationHelper.getCurrentLocationOrNull()
             when (val result = repository.monitoringMap(loc?.latitude, loc?.longitude)) {
                 is ResultState.Success -> {
                     _monitoring.value = result.data
-                    val total = result.data.pelanggan.size + result.data.keluhanAktif.size
-                    MenuLogger.api("menu=monitoring markers=$total")
-                    if (total == 0) setMessage("Data monitoring kosong pada area ini.")
+                    val customerCount = result.data.pelanggan.size
+                    val issueCount = result.data.keluhanAktif.size
+                    val total = customerCount + issueCount
+                    MenuLogger.mapFlow("MAP_DATA_RECEIVED pelanggan=$customerCount keluhan=$issueCount")
+                    MenuLogger.mapMarkers("MAP_MARKERS pelanggan=$customerCount keluhan=$issueCount total=$total")
+                    if (total == 0) {
+                        _monitoringError.value = "Tidak ada data monitoring"
+                        setMessage("Tidak ada data monitoring")
+                    } else {
+                        MenuLogger.mapFlow("MAP_LOAD_SUCCESS markers=$total")
+                    }
                 }
-                is ResultState.Error -> if (!handleUnauthorized(result)) setMessage(result.message)
+                is ResultState.Error -> {
+                    _monitoring.value = MonitoringMapResponse()
+                    _monitoringError.value = result.message
+                    MenuLogger.mapFlow("MAP_LOAD_ERROR message=${result.message}")
+                    if (!handleUnauthorized(result)) setMessage(result.message)
+                }
                 ResultState.Loading -> Unit
             }
             clearLoading("monitoring")
         }
+    }
+
+    private fun applyCustomerAutoFill(user: User?) {
+        val resolvedKecamatanId = user?.kecamatanId ?: user?.kecamatan?.id ?: user?.desa?.kecamatanId
+        val resolvedKecamatanName = user?.kecamatan?.name ?: "Kecamatan #${resolvedKecamatanId ?: "-"}"
+        _customerAutoFill.value = CustomerAutoFill(
+            petugasId = user?.id,
+            petugasName = user?.name ?: "-",
+            desaId = user?.desaId ?: user?.desa?.id,
+            desaName = user?.desa?.name ?: "-",
+            kecamatanId = resolvedKecamatanId,
+            kecamatanName = resolvedKecamatanName
+        )
+        MenuLogger.customerForm("autofill petugas=${_customerAutoFill.value.petugasName} desa=${_customerAutoFill.value.desaName} kecamatan=${_customerAutoFill.value.kecamatanName}")
     }
 
     private fun handleUnauthorized(result: ResultState.Error): Boolean {
@@ -428,9 +500,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _tagihan.value = emptyList()
         _keluhan.value = emptyList()
         _monitoring.value = null
+        _monitoringError.value = null
         _tagihanDetail.value = null
         _meterRecords.value = emptyList()
         _pembayaranList.value = emptyList()
+        _customerAutoFill.value = CustomerAutoFill()
+        _customerCoordinates.value = null to null
     }
 
     private fun safeLaunch(tag: String, block: suspend () -> Unit) {
@@ -464,7 +539,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun setMessage(message: String) {
         _statusMessage.value = message
-        MenuLogger.error("ui_message=$message")
+        MenuLogger.ui("ui_message=$message")
     }
 
     fun clearMessage() {

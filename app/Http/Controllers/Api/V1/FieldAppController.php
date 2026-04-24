@@ -34,7 +34,7 @@ class FieldAppController extends Controller
 
     public function pelangganIndex(Request $request)
     {
-        $query = Pelanggan::query()->orderBy('name');
+        $query = Pelanggan::query()->with(['desa', 'kecamatan', 'assignedPetugas'])->orderBy('name');
         if (! $request->user()->isKecamatanLevel()) {
             $query->where('desa_id', $request->user()->desa_id);
         }
@@ -48,9 +48,14 @@ class FieldAppController extends Controller
             });
         }
 
+        $paginator = $query->paginate((int) $request->integer('per_page', 20));
+        $paginator->setCollection(
+            $paginator->getCollection()->map(fn (Pelanggan $item) => (new PelangganResource($item))->resolve())
+        );
+
         return $this->successResponse(
             'Daftar pelanggan berhasil diambil.',
-            $query->paginate((int) $request->integer('per_page', 20))
+            $paginator
         );
     }
 
@@ -60,7 +65,7 @@ class FieldAppController extends Controller
             $this->abortUnlessCanAccessDesa($request, $pelanggan->desa_id);
         }
 
-        return $this->successResponse('Detail pelanggan berhasil diambil.', new PelangganResource($pelanggan));
+        return $this->successResponse('Detail pelanggan berhasil diambil.', new PelangganResource($pelanggan->load(['desa', 'kecamatan', 'assignedPetugas'])));
     }
 
     public function pelangganStore(Request $request)
@@ -97,7 +102,7 @@ class FieldAppController extends Controller
             return Pelanggan::create($data);
         });
 
-        return $this->successResponse('Pelanggan berhasil dibuat.', new PelangganResource($pelanggan), 201);
+        return $this->successResponse('Pelanggan berhasil dibuat.', new PelangganResource($pelanggan->load(['desa', 'kecamatan', 'assignedPetugas'])), 201);
     }
 
     public function pelangganUpdate(Request $request, Pelanggan $pelanggan)
@@ -133,7 +138,7 @@ class FieldAppController extends Controller
 
         $pelanggan->update($data);
 
-        return $this->successResponse('Pelanggan berhasil diperbarui.', new PelangganResource($pelanggan->fresh()));
+        return $this->successResponse('Pelanggan berhasil diperbarui.', new PelangganResource($pelanggan->fresh()->load(['desa', 'kecamatan', 'assignedPetugas'])));
     }
 
     public function pelangganDestroy(Request $request, Pelanggan $pelanggan)
@@ -374,6 +379,24 @@ class FieldAppController extends Controller
         }
 
         $data['petugas_id'] = $request->user()->id;
+
+        $duplicatePaymentExists = Pembayaran::query()
+            ->where('tagihan_id', $data['tagihan_id'])
+            ->where('payment_method', $data['payment_method'])
+            ->where('paid_at', $data['paid_at'])
+            ->where('amount', $data['amount'])
+            ->exists();
+
+        if ($duplicatePaymentExists) {
+            return $this->errorResponse('Pembayaran duplikat terdeteksi untuk tagihan, nominal, metode, dan tanggal yang sama.', 422);
+        }
+
+        $totalPaid = (float) Pembayaran::query()->where('tagihan_id', $tagihan->id)->sum('amount');
+        $remaining = max(0, (float) $tagihan->amount - $totalPaid);
+
+        if ((float) $data['amount'] > $remaining) {
+            return $this->errorResponse("Nominal melebihi sisa tagihan. Sisa saat ini: {$remaining}", 422);
+        }
 
         $payment = Pembayaran::create($data);
 

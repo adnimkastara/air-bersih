@@ -29,10 +29,10 @@ interface ApiService {
     suspend fun pelanggan(
         @Query("q") query: String? = null,
         @Query("desa") desa: String? = null
-    ): Response<ApiPagination<Pelanggan>>
+    ): Response<ApiEnvelope<ApiPagination<Pelanggan>>>
 
     @GET("pelanggan/{id}")
-    suspend fun pelangganDetail(@Path("id") id: Long): Response<Pelanggan>
+    suspend fun pelangganDetail(@Path("id") id: Long): Response<ApiEnvelope<Pelanggan>>
 
     @POST("pelanggan")
     suspend fun createPelanggan(@Body request: PelangganCreateRequest): Response<ApiEnvelope<Pelanggan>>
