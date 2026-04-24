@@ -250,18 +250,26 @@ private fun buildLeafletHtml(monitoring: MonitoringMapResponse): String {
                 });
 
                 const pelangganData = [$pelangganMarkers];
-                pelangganData.forEach((item) => {
-                    L.marker([item.lat, item.lng], { icon: pelangganIcon })
-                        .addTo(map)
-                        .bindPopup(`<strong>${'$'}{item.title}</strong><br/>${'$'}{item.subtitle}`);
-                });
+                if (pelangganData && pelangganData.length > 0) {
+                    pelangganData.forEach((item) => {
+                        if (item && item.lat && item.lng) {
+                            L.marker([item.lat, item.lng], { icon: pelangganIcon })
+                                .addTo(map)
+                                .bindPopup(`<strong>${'$'}{item.title}</strong><br/>${'$'}{item.subtitle}`);
+                        }
+                    });
+                }
 
                 const keluhanData = [$keluhanMarkers];
-                keluhanData.forEach((item) => {
-                    L.marker([item.lat, item.lng], { icon: keluhanIcon })
-                        .addTo(map)
-                        .bindPopup(`<strong>${'$'}{item.title}</strong><br/>${'$'}{item.subtitle}`);
-                });
+                if (keluhanData && keluhanData.length > 0) {
+                    keluhanData.forEach((item) => {
+                        if (item && item.lat && item.lng) {
+                            L.marker([item.lat, item.lng], { icon: keluhanIcon })
+                                .addTo(map)
+                                .bindPopup(`<strong>${'$'}{item.title}</strong><br/>${'$'}{item.subtitle}`);
+                        }
+                    });
+                }
             </script>
         </body>
         </html>
@@ -270,27 +278,32 @@ private fun buildLeafletHtml(monitoring: MonitoringMapResponse): String {
 
 private fun List<Pelanggan>.pelangganToMarkers(type: String): String =
     mapNotNull { p ->
-        val lat = p.latitude ?: return@mapNotNull null
-        val lng = p.longitude ?: return@mapNotNull null
+        val lat = p.latitude
+        val lng = p.longitude
+        if (lat == null || lng == null) return@mapNotNull null
         val title = escapeJs(p.nama ?: "Pelanggan")
         val subtitle = escapeJs("${p.kodePelanggan ?: "-"} | ${p.status ?: "-"}")
         markerJson(type, lat, lng, title, subtitle)
-    }.joinToString(",")
+    }.filter { it.isNotBlank() }.joinToString(",")
 
 private fun List<Keluhan>.keluhanToMarkers(type: String): String =
     mapNotNull { k ->
-        val lat = k.latitude ?: return@mapNotNull null
-        val lng = k.longitude ?: return@mapNotNull null
+        val lat = k.latitude
+        val lng = k.longitude
+        if (lat == null || lng == null) return@mapNotNull null
         val title = escapeJs(k.judul ?: "Keluhan")
         val subtitle = escapeJs("${k.jenisLaporan ?: "-"} | ${k.prioritas ?: "-"}")
         markerJson(type, lat, lng, title, subtitle)
-    }.joinToString(",")
+    }.filter { it.isNotBlank() }.joinToString(",")
 
 private fun markerJson(type: String, lat: Double, lng: Double, title: String, subtitle: String): String {
-    return "{type:'$type',lat:${lat.format()},lng:${lng.format()},title:'$title',subtitle:'$subtitle'}"
+    // Pastikan string JSON JS tidak rusak gara-gara newline atau kutip
+    val safeTitle = title.replace("'", "\\'").replace("\n", " ")
+    val safeSubtitle = subtitle.replace("'", "\\'").replace("\n", " ")
+    return "{type:'$type',lat:${lat.format()},lng:${lng.format()},title:'$safeTitle',subtitle:'$safeSubtitle'}"
 }
 
 private fun escapeJs(input: String): String =
-    input.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ")
+    input.replace("\\", "\\\\").replace("\"", "\\\"").replace("'", "\\'").replace("\n", " ").replace("\r", "")
 
 private fun Double.format(): String = String.format(Locale.US, "%.6f", this)
