@@ -27,7 +27,12 @@ class KeluhanController extends Controller
 
         $query = $this->applyRoleScope($request, $query);
 
-        foreach (['status_penanganan', 'prioritas', 'jenis_laporan'] as $filter) {
+        $filterableColumns = ['status_penanganan', 'jenis_laporan'];
+        if (LaporanGangguan::hasPrioritasColumn()) {
+            $filterableColumns[] = 'prioritas';
+        }
+
+        foreach ($filterableColumns as $filter) {
             if (! empty($filters[$filter])) {
                 $query->where($filter, $filters[$filter]);
             }
@@ -92,6 +97,9 @@ class KeluhanController extends Controller
         if (! LaporanGangguan::hasCoordinateColumns()) {
             unset($data['latitude'], $data['longitude']);
         }
+        if (! LaporanGangguan::hasPrioritasColumn()) {
+            unset($data['prioritas']);
+        }
 
         if ($request->hasFile('foto_gangguan')) {
             $data['foto_path'] = $request->file('foto_gangguan')->store('keluhan', 'public');
@@ -121,10 +129,13 @@ class KeluhanController extends Controller
             $this->abortUnlessCanAccessDesa($request, $laporanGangguan->desa_id ?? $laporanGangguan->pelanggan?->desa_id);
         }
 
-        $data = $request->validate([
+        $rules = [
             'status_penanganan' => ['required', 'in:baru,diproses,selesai'],
-            'prioritas' => ['required', 'in:rendah,sedang,tinggi'],
-        ]);
+        ];
+        if (LaporanGangguan::hasPrioritasColumn()) {
+            $rules['prioritas'] = ['required', 'in:rendah,sedang,tinggi'];
+        }
+        $data = $request->validate($rules);
 
         $laporanGangguan->fill($data);
         if ($data['status_penanganan'] === 'selesai') {

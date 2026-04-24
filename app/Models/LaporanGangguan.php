@@ -13,6 +13,7 @@ class LaporanGangguan extends Model
     use HasFactory;
 
     private static ?bool $hasCoordinateColumns = null;
+    private static array $columnExistenceCache = [];
 
     protected $fillable = [
         'kode_keluhan',
@@ -94,5 +95,35 @@ class LaporanGangguan extends Model
         }
 
         return self::$hasCoordinateColumns;
+    }
+
+    public static function hasPrioritasColumn(): bool
+    {
+        return self::hasColumn('prioritas');
+    }
+
+    public static function hasColumn(string $column): bool
+    {
+        if (array_key_exists($column, self::$columnExistenceCache)) {
+            return self::$columnExistenceCache[$column];
+        }
+
+        try {
+            if (! Schema::hasTable('laporan_gangguans')) {
+                self::$columnExistenceCache[$column] = false;
+
+                return false;
+            }
+
+            self::$columnExistenceCache[$column] = Schema::hasColumn('laporan_gangguans', $column);
+        } catch (Throwable $exception) {
+            Log::warning("Failed to inspect laporan_gangguans.{$column} column.", [
+                'error' => $exception->getMessage(),
+            ]);
+
+            self::$columnExistenceCache[$column] = false;
+        }
+
+        return self::$columnExistenceCache[$column];
     }
 }
