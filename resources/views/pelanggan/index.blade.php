@@ -26,7 +26,7 @@
 
     <div class="card">
         <h3 style="margin-top:0;">Peta Titik Pelanggan</h3>
-        <div id="map" style="height:360px;border:1px solid var(--line);border-radius:12px;"></div>
+        <div id="map" style="height:360px;border-radius:16px;"></div>
     </div>
 
     <div class="card table-wrap">
@@ -43,10 +43,10 @@
                     <td>{{ $pelanggan->assignedPetugas?->name ?? '-' }}</td>
                     <td><span class="badge {{ $pelanggan->status === 'aktif' ? 'badge-success' : 'badge-danger' }}">{{ ucfirst($pelanggan->status) }}</span></td>
                     <td>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             <a href="{{ route('pelanggan.show', $pelanggan) }}" class="btn btn-outline btn-sm">Detail</a>
-                            <a href="{{ route('pelanggan.edit', $pelanggan) }}" class="btn btn-outline btn-sm">Edit</a>
-                            <form action="{{ route('pelanggan.destroy', $pelanggan) }}" method="POST" onsubmit="return confirm('Hapus pelanggan ini?')">@csrf @method('DELETE')<button class="btn btn-danger btn-sm" type="submit">Hapus</button></form>
+                            <a href="{{ route('pelanggan.edit', $pelanggan) }}" class="btn btn-outline btn-sm btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ route('pelanggan.destroy', $pelanggan) }}" method="POST" onsubmit="return confirm('Hapus pelanggan ini?')">@csrf @method('DELETE')<button class="btn btn-danger btn-sm btn-icon" type="submit" title="Hapus"><i class="bi bi-trash"></i></button></form>
                         </div>
                     </td>
                 </tr>
