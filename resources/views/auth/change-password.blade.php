@@ -3,8 +3,8 @@
 @section('title', 'Ganti Password')
 
 @section('content')
-    <div class="card" style="max-width:640px;">
-        <h2>Ganti Password</h2>
+    <div class="card" style="max-width:500px;">
+        <h2 style="margin-top:0;margin-bottom:18px;font-size:1.4rem;font-weight:800;">Ganti Password</h2>
         @if(session('status')) <div class="alert alert-success">{{ session('status') }}</div> @endif
         @if ($errors->any()) <div class="alert alert-danger">{{ $errors->first() }}</div> @endif
 
