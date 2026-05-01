@@ -45,8 +45,8 @@
                     <td>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             <a href="{{ route('pelanggan.show', $pelanggan) }}" class="btn btn-outline btn-sm">Detail</a>
-                            <a href="{{ route('pelanggan.edit', $pelanggan) }}" class="btn btn-outline btn-sm btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
-                            <form action="{{ route('pelanggan.destroy', $pelanggan) }}" method="POST" onsubmit="return confirm('Hapus pelanggan ini?')">@csrf @method('DELETE')<button class="btn btn-danger btn-sm btn-icon" type="submit" title="Hapus"><i class="bi bi-trash"></i></button></form>
+                            <a href="{{ route('pelanggan.edit', $pelanggan) }}" class="btn btn-soft-primary btn-sm btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ route('pelanggan.destroy', $pelanggan) }}" method="POST" onsubmit="return confirm('Hapus pelanggan ini?')">@csrf @method('DELETE')<button class="btn btn-soft-danger btn-sm btn-icon" type="submit" title="Hapus"><i class="bi bi-trash"></i></button></form>
                         </div>
                     </td>
                 </tr>

@@ -18,7 +18,7 @@
             @forelse($kecamatans as $kecamatan)
                 <tr>
                     <td>{{ $kecamatan->name }}</td>
-                    <td>@if(Route::has('kecamatan.edit'))<a href="{{ route('kecamatan.edit', $kecamatan) }}" class="btn btn-outline btn-sm">Edit</a>@else-@endif</td>
+                    <td>@if(Route::has('kecamatan.edit'))<a href="{{ route('kecamatan.edit', $kecamatan) }}" class="btn btn-soft-primary btn-sm btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>@else-@endif</td>
                 </tr>
             @empty
                 <tr><td colspan="2">@include('layouts.partials.empty-state', ['message' => 'Belum ada data kecamatan.'])</td></tr>

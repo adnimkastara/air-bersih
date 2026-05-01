@@ -1,727 +1,426 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $dashboardTitle }}</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
-    <style>
-        :root {
-            --bg-deep: #061a2f;
-            --bg-blue: #0d2f53;
-            --cyan: #23d5ff;
-            --turquoise: #1cc5be;
-            --soft-green: #76f6b4;
-            --white: #f6fbff;
-            --text-main: #e8f5ff;
-            --text-soft: #9dc0d8;
-            --line: rgba(255, 255, 255, 0.16);
-            --glass: rgba(255, 255, 255, 0.08);
-            --glass-strong: rgba(255, 255, 255, 0.14);
-            --shadow: 0 20px 40px rgba(1, 23, 39, 0.35);
+@extends('layouts.admin')
+
+@section('title', $dashboardTitle)
+
+@section('head')
+<style>
+    .dashboard-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(260px, .55fr);
+        gap: 18px;
+        align-items: stretch;
+    }
+
+    .hero-panel {
+        padding: 28px;
+        border-radius: 16px;
+        background:
+            linear-gradient(135deg, rgba(0, 97, 255, .08), rgba(14, 165, 233, .04)),
+            #fff;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(226, 232, 240, .9);
+    }
+
+    .hero-panel h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        line-height: 1.2;
+        letter-spacing: 0;
+    }
+
+    .hero-panel p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        max-width: 760px;
+    }
+
+    .quick-actions {
+        display: grid;
+        gap: 10px;
+    }
+
+    .quick-actions a {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin: 18px 0;
+    }
+
+    .stat-card {
+        display: grid;
+        gap: 14px;
+        padding: 22px;
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid rgba(226, 232, 240, .86);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .stat-icon {
+        width: 46px;
+        height: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        font-size: 1.15rem;
+    }
+
+    .stat-icon.blue { background: #eaf2ff; color: #0061ff; }
+    .stat-icon.green { background: #dcfce7; color: #15803d; }
+    .stat-icon.amber { background: #fef3c7; color: #b45309; }
+    .stat-icon.rose { background: #ffe4e6; color: #be123c; }
+
+    .stat-card small {
+        color: var(--muted);
+        font-weight: 700;
+    }
+
+    .stat-card strong {
+        font-size: 1.65rem;
+        line-height: 1.15;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(320px, .75fr);
+        gap: 18px;
+    }
+
+    .panel-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .panel-title h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .bar-chart {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(56px, 1fr));
+        gap: 12px;
+        align-items: end;
+        min-height: 260px;
+        padding: 18px;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #f8fafc, #fff);
+        border: 1px solid #eef2f7;
+    }
+
+    .bar-wrap {
+        display: grid;
+        align-items: end;
+        gap: 8px;
+        height: 220px;
+        color: var(--muted);
+        font-size: .78rem;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .bar {
+        min-height: 12px;
+        border-radius: 12px 12px 6px 6px;
+        background: linear-gradient(180deg, #0061ff, rgba(14, 165, 233, .42));
+        box-shadow: 0 12px 24px rgba(0, 97, 255, .16);
+    }
+
+    .progress-ring {
+        width: 132px;
+        height: 132px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: conic-gradient(#0061ff var(--angle), #e2e8f0 0);
+    }
+
+    .progress-ring::before {
+        content: attr(data-value);
+        width: 94px;
+        height: 94px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: #fff;
+        color: var(--text);
+        font-size: 1.25rem;
+        font-weight: 800;
+        box-shadow: inset 0 0 0 1px #edf2f7;
+    }
+
+    .activity-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .activity-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #eef2f7;
+    }
+
+    .map-preview {
+        min-height: 290px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+        background:
+            linear-gradient(135deg, rgba(0, 97, 255, .1), rgba(20, 184, 166, .08)),
+            repeating-linear-gradient(45deg, rgba(15, 23, 42, .05) 0 1px, transparent 1px 14px),
+            #f8fafc;
+        border: 1px solid #eef2f7;
+    }
+
+    .map-river {
+        position: absolute;
+        left: -8%;
+        top: 48%;
+        width: 120%;
+        height: 70px;
+        border-radius: 999px;
+        transform: rotate(-8deg);
+        background: linear-gradient(90deg, rgba(0,97,255,.12), rgba(14,165,233,.32), rgba(20,184,166,.18));
+    }
+
+    .map-pin {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        border: 3px solid #fff;
+        background: #0061ff;
+        box-shadow: 0 0 0 8px rgba(0, 97, 255, .12);
+    }
+
+    .dashboard-bottom {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+        gap: 18px;
+        margin-top: 18px;
+    }
+
+    @media (max-width: 1180px) {
+        .dashboard-hero,
+        .dashboard-grid,
+        .dashboard-bottom {
+            grid-template-columns: 1fr;
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            color: var(--text-main);
-            background:
-                radial-gradient(circle at 12% 20%, rgba(35, 213, 255, 0.28), transparent 30%),
-                radial-gradient(circle at 80% 0%, rgba(28, 197, 190, 0.25), transparent 30%),
-                radial-gradient(circle at 82% 78%, rgba(118, 246, 180, 0.15), transparent 30%),
-                linear-gradient(140deg, var(--bg-deep), #082745 45%, var(--bg-blue));
-            position: relative;
-            overflow-x: hidden;
+        .stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+    }
 
-        body::before,
-        body::after {
-            content: "";
-            position: fixed;
-            inset: auto;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            filter: blur(70px);
-            z-index: 0;
+    @media (max-width: 700px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
         }
-
-        body::before {
-            top: 8%;
-            left: -80px;
-            background: rgba(35, 213, 255, 0.28);
-        }
-
-        body::after {
-            right: -80px;
-            bottom: 10%;
-            background: rgba(118, 246, 180, 0.2);
-        }
-
-        .layout {
-            position: relative;
-            z-index: 1;
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 22px;
-            padding: 24px;
-            max-width: 1550px;
-            margin: 0 auto;
-        }
-
-        .sidebar,
-        .topbar,
-        .hero,
-        .panel {
-            backdrop-filter: blur(14px);
-            background: linear-gradient(160deg, var(--glass), rgba(255, 255, 255, 0.03));
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .sidebar {
-            padding: 24px 18px;
-            min-height: calc(100vh - 48px);
-            position: sticky;
-            top: 24px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 26px;
-        }
-
-        .brand-logo {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            display: grid;
-            place-items: center;
-            background: linear-gradient(140deg, rgba(35, 213, 255, 0.28), rgba(28, 197, 190, 0.16));
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            font-size: 1.4rem;
-        }
-
-        .brand h1 {
-            margin: 0;
-            font-size: 1rem;
-            font-weight: 700;
-            line-height: 1.35;
-        }
-
-        .brand p { margin: 0; color: var(--text-soft); font-size: 0.82rem; }
-
-        .menu-title {
-            margin: 16px 8px 10px;
-            font-size: 0.74rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-soft);
-        }
-
-        .menu {
-            display: grid;
-            gap: 8px;
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            color: var(--text-main);
-            text-decoration: none;
-            border: 1px solid transparent;
-            transition: .2s ease;
-        }
-
-        .menu-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateX(2px);
-        }
-
-        .menu-item .icon {
-            width: 30px;
-            height: 30px;
-            display: grid;
-            place-items: center;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-foot {
-            margin-top: 22px;
-            padding: 16px;
-            border-radius: 14px;
-            background: linear-gradient(145deg, rgba(35, 213, 255, 0.14), rgba(118, 246, 180, 0.09));
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: var(--text-main);
-        }
-
-        .sidebar-foot p { margin: 4px 0; color: var(--text-soft); font-size: .85rem; }
-
-        .content {
-            display: grid;
-            gap: 18px;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            gap: 14px;
-        }
-
-        .topbar h2 {
-            margin: 0;
-            font-size: 1.3rem;
-        }
-
-        .search {
-            flex: 1;
-            max-width: 420px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 10px 12px;
-            color: var(--text-soft);
-        }
-
-        .search input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            color: var(--white);
-            outline: none;
-            font-size: 0.92rem;
-        }
-
-        .top-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chip {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            display: grid;
-            place-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .profile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 12px 6px 6px;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-
-        .avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            display: grid;
-            place-items: center;
-            font-weight: 700;
-            background: linear-gradient(130deg, rgba(35, 213, 255, 0.4), rgba(28, 197, 190, 0.25));
-        }
-
-        .hero {
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::after {
-            content: "";
-            position: absolute;
-            right: -40px;
-            top: -80px;
-            width: 280px;
-            height: 280px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(35, 213, 255, 0.45) 0%, rgba(35, 213, 255, 0) 65%);
-        }
-
-        .hero h3 {
-            margin: 0;
-            font-size: 1.45rem;
-            max-width: 640px;
-        }
-
-        .hero p { color: var(--text-soft); max-width: 700px; }
-
-        .hero-stats {
-            margin-top: 16px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 10px;
-        }
-
-        .hero-stats div {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 12px;
-        }
-
-        .hero-stats small { color: var(--text-soft); }
-        .hero-stats strong { display: block; margin-top: 4px; font-size: 1.1rem; }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .stat-card {
-            padding: 16px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            background: linear-gradient(155deg, rgba(255, 255, 255, 0.1), rgba(255,255,255,0.03));
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: "";
-            position: absolute;
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(35, 213, 255, 0.22), transparent 65%);
-            top: -30px;
-            right: -30px;
-        }
-
-        .stat-card .big-icon { font-size: 1.5rem; }
-        .stat-card h4 { margin: 8px 0 2px; font-size: 0.9rem; color: var(--text-soft); font-weight: 500; }
-        .stat-card strong { font-size: 1.55rem; }
-
-        .grid-main {
-            display: grid;
-            grid-template-columns: 1.55fr 1fr;
-            gap: 12px;
-        }
-
-        .panel { padding: 18px; }
-
-        .panel h4 { margin: 0 0 14px; font-size: 1rem; }
 
         .bar-chart {
-            display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
-            gap: 10px;
-            align-items: end;
-            height: 230px;
-            padding: 12px;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            overflow-x: auto;
         }
+    }
+</style>
+@endsection
 
-        .bar-wrap { text-align: center; font-size: .75rem; color: var(--text-soft); }
-
-        .bar {
-            width: 100%;
-            border-radius: 12px 12px 6px 6px;
-            background: linear-gradient(180deg, rgba(35, 213, 255, 0.92), rgba(28, 197, 190, 0.55));
-            box-shadow: 0 8px 20px rgba(35, 213, 255, 0.24);
-        }
-
-        .ring-wrap {
-            display: flex;
-            gap: 14px;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-
-        .ring {
-            --angle: 60%;
-            width: 128px;
-            height: 128px;
-            border-radius: 50%;
-            background: conic-gradient(var(--soft-green) var(--angle), rgba(255,255,255,0.15) 0);
-            display: grid;
-            place-items: center;
-        }
-
-        .ring::after {
-            content: "";
-            width: 88px;
-            height: 88px;
-            border-radius: 50%;
-            background: #083356;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .ring-label {
-            position: absolute;
-            font-size: .95rem;
-            font-weight: 700;
-        }
-
-        .monitor-list, .complaint-list {
-            display: grid;
-            gap: 10px;
-        }
-
-        .item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 11px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.07);
-        }
-
-        .badge {
-            font-size: .75rem;
-            padding: 4px 8px;
-            border-radius: 999px;
-            background: rgba(118, 246, 180, 0.16);
-            color: #adffd4;
-            border: 1px solid rgba(118, 246, 180, 0.35);
-        }
-
-        .badge.warn {
-            color: #fff1b3;
-            border-color: rgba(255, 215, 112, 0.35);
-            background: rgba(255, 215, 112, 0.14);
-        }
-
-        .grid-bottom {
-            display: grid;
-            grid-template-columns: 1.2fr .8fr;
-            gap: 12px;
-        }
-
-        .map {
-            border-radius: 16px;
-            min-height: 250px;
-            position: relative;
-            overflow: hidden;
-            background:
-                linear-gradient(135deg, rgba(35, 213, 255, 0.18), rgba(28, 197, 190, 0.12)),
-                repeating-linear-gradient(45deg, rgba(255,255,255,0.08) 0 1px, transparent 1px 12px),
-                rgba(8, 43, 72, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.17);
-        }
-
-        .river {
-            position: absolute;
-            left: -8%;
-            top: 45%;
-            width: 120%;
-            height: 72px;
-            border-radius: 999px;
-            transform: rotate(-8deg);
-            background: linear-gradient(90deg, rgba(35, 213, 255, 0.1), rgba(35, 213, 255, 0.45), rgba(118, 246, 180, 0.25));
-            filter: blur(0.5px);
-        }
-
-        .pin {
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: 2px solid #fff;
-            background: var(--cyan);
-            box-shadow: 0 0 0 10px rgba(35, 213, 255, 0.12);
-        }
-
-        .map-note {
-            position: absolute;
-            right: 12px;
-            top: 12px;
-            padding: 10px;
-            border-radius: 12px;
-            background: rgba(8, 27, 46, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            font-size: .84rem;
-            max-width: 220px;
-        }
-
-        .logout-btn {
-            margin-top: 16px;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-main);
-            padding: 10px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        @media (max-width: 1180px) {
-            .layout { grid-template-columns: 1fr; }
-            .sidebar { min-height: auto; position: static; }
-            .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .grid-main, .grid-bottom { grid-template-columns: 1fr; }
-        }
-
-        @media (max-width: 760px) {
-            .topbar { flex-wrap: wrap; }
-            .search { order: 3; max-width: 100%; width: 100%; }
-            .cards { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
-<body>
+@section('content')
 @php
+    $user = auth()->user();
     $totalTagihan = (float) $totalTagihan;
     $totalPembayaran = (float) $totalPembayaran;
     $totalTunggakan = (float) $totalTunggakan;
-    $paymentPercent = $totalTagihan > 0 ? round(($totalPembayaran / $totalTagihan) * 100) : 0;
+    $paymentPercent = $totalTagihan > 0 ? min(100, round(($totalPembayaran / $totalTagihan) * 100)) : 0;
     $months = $chartData ?? [];
 @endphp
 
-<div class="layout">
-    <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-logo">💧</div>
-            <div>
-                <h1>{{ $namaUnitPengelola ?: 'Air Bersih Desa' }}</h1>
-                <p>{{ $namaKecamatan ? 'Kecamatan '.$namaKecamatan : 'Sistem Pengelolaan Cerdas' }}</p>
-            </div>
+<div class="dashboard-hero">
+    <section class="hero-panel">
+        <div class="badge badge-success" style="margin-bottom:14px;">Status layanan aktif</div>
+        <h2>{{ $dashboardTitle }}</h2>
+        <p>{{ $dashboardDescription }}</p>
+        <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">
+            <span class="badge badge-success">{{ $namaUnitPengelola ?: 'Air Bersih Desa' }}</span>
+            @if($namaKecamatan)
+                <span class="badge" style="background:#eaf2ff;color:#0056e0;">Kecamatan {{ $namaKecamatan }}</span>
+            @endif
         </div>
+    </section>
 
-        <div class="menu-title">Navigasi Utama</div>
-        <nav class="menu">
-            <a class="menu-item" href="#"><span class="icon">🏠</span>Beranda</a>
-            <a class="menu-item" href="#statistik"><span class="icon">📊</span>Statistik</a>
-            <a class="menu-item" href="#monitoring"><span class="icon">🛰️</span>Monitoring</a>
-            <a class="menu-item" href="#peta"><span class="icon">🗺️</span>Peta Pelanggan</a>
-            <a class="menu-item" href="#keluhan"><span class="icon">🛠️</span>Gangguan & Keluhan</a>
-        </nav>
-
-        <div class="menu-title">Menu Cepat</div>
-        <nav class="menu">
+    <aside class="card" style="margin:0;">
+        <div class="panel-title">
+            <h3>Menu Cepat</h3>
+            <span class="badge" style="background:#f1f5f9;color:#475569;">{{ $user?->role?->name ?? 'Admin' }}</span>
+        </div>
+        <div class="quick-actions">
             @foreach ($shortcuts as $shortcut)
-                <a class="menu-item" href="{{ route($shortcut['route']) }}">
-                    <span class="icon">➜</span>{{ $shortcut['label'] }}
+                <a class="btn btn-outline" href="{{ route($shortcut['route']) }}">
+                    <i class="bi bi-arrow-right-circle"></i>{{ $shortcut['label'] }}
                 </a>
             @endforeach
-        </nav>
+        </div>
+    </aside>
+</div>
 
-        <div class="sidebar-foot">
-            <strong>Status Layanan Hari Ini</strong>
-            <p>Distribusi air berjalan normal pada mayoritas wilayah desa.</p>
-            <p><small>Perbarui data monitoring setiap pergantian shift petugas.</small></p>
+<section class="stats-grid" id="statistik">
+    <article class="stat-card">
+        <span class="stat-icon blue"><i class="bi bi-people"></i></span>
+        <small>{{ $isKecamatanDashboard ? 'Total Pelanggan Rumah Tangga' : 'Total Pelanggan' }}</small>
+        <strong>{{ number_format($totalPelanggan, 0, ',', '.') }}</strong>
+    </article>
+    <article class="stat-card">
+        <span class="stat-icon amber"><i class="bi bi-receipt"></i></span>
+        <small>{{ $isKecamatanDashboard ? 'Total Tagihan Desa ke Kecamatan' : 'Total Tagihan' }}</small>
+        <strong>Rp {{ number_format($totalTagihan, 0, ',', '.') }}</strong>
+    </article>
+    <article class="stat-card">
+        <span class="stat-icon green"><i class="bi bi-credit-card"></i></span>
+        <small>{{ $isKecamatanDashboard ? 'Total Pembayaran Desa ke Kecamatan' : 'Total Pembayaran' }}</small>
+        <strong>Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</strong>
+    </article>
+    <article class="stat-card">
+        <span class="stat-icon rose"><i class="bi bi-exclamation-triangle"></i></span>
+        <small>{{ $isKecamatanDashboard ? 'Total Tunggakan Setoran' : 'Gangguan Layanan' }}</small>
+        <strong>{{ $isKecamatanDashboard ? 'Rp '.number_format($totalTunggakan, 0, ',', '.') : number_format($totalGangguan, 0, ',', '.').' Kasus' }}</strong>
+    </article>
+</section>
+
+<section class="dashboard-grid">
+    <article class="card" style="margin:0;">
+        <div class="panel-title">
+            <h3>{{ $isKecamatanDashboard ? 'Grafik Kepatuhan Setoran per Desa' : 'Grafik Pendapatan, Tagihan, Pembayaran' }}</h3>
+            <span class="badge" style="background:#f1f5f9;color:#475569;">Periode berjalan</span>
+        </div>
+        <div class="bar-chart">
+            @foreach ($months as $month)
+                <div class="bar-wrap">
+                    <div class="bar" style="height: {{ max(8, (int) $month['value']) }}%;"></div>
+                    <div>{{ $month['label'] }}</div>
+                </div>
+            @endforeach
+        </div>
+    </article>
+
+    <article class="card" id="monitoring" style="margin:0;">
+        <div class="panel-title">
+            <h3>Kepatuhan Pembayaran</h3>
+        </div>
+        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:18px;">
+            <div class="progress-ring" style="--angle: {{ $paymentPercent }}%;" data-value="{{ $paymentPercent }}%"></div>
+            <div style="max-width:260px;">
+                <strong style="font-size:1rem;">Pembayaran terhadap total tagihan</strong>
+                <p class="muted" style="margin:8px 0 0;">Pantau performa pembayaran dan tindak lanjuti wilayah dengan tunggakan tinggi.</p>
+            </div>
+        </div>
+        <div class="activity-list">
+            <div class="activity-item"><span>Shift Pagi - Unit Distribusi Utara</span><span class="badge badge-success">Normal</span></div>
+            <div class="activity-item"><span>Shift Siang - Unit Distribusi Tengah</span><span class="badge badge-success">Stabil</span></div>
+            <div class="activity-item"><span>Shift Malam - Unit Distribusi Selatan</span><span class="badge badge-warning">Perlu Cek</span></div>
+        </div>
+    </article>
+</section>
+
+@if($isKecamatanDashboard)
+    <section class="card table-wrap" style="margin-top:18px;">
+        <div class="panel-title" style="padding:0 26px;">
+            <h3>Ringkasan Kecamatan per Desa (Periode {{ $selectedPeriod }})</h3>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Desa</th>
+                    <th>Jml Pelanggan</th>
+                    <th>Pemakaian</th>
+                    <th>Tagihan RT</th>
+                    <th>Pembayaran RT</th>
+                    <th>Tagihan Kec.</th>
+                    <th>Pembayaran Kec.</th>
+                    <th>Status Setoran</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($villageSummaries as $row)
+                    <tr>
+                        <td>{{ $row['desa'] }}</td>
+                        <td>{{ number_format($row['jumlah_pelanggan'], 0, ',', '.') }}</td>
+                        <td>{{ number_format($row['total_pemakaian_m3'], 0, ',', '.') }} m3</td>
+                        <td>Rp {{ number_format($row['total_tagihan_rumah_tangga'], 0, ',', '.') }}</td>
+                        <td>Rp {{ number_format($row['total_pembayaran_rumah_tangga'], 0, ',', '.') }}</td>
+                        <td>Rp {{ number_format($row['total_tagihan_kecamatan'], 0, ',', '.') }}</td>
+                        <td>Rp {{ number_format($row['total_pembayaran_kecamatan'], 0, ',', '.') }}</td>
+                        <td>{{ str($row['status_setoran'])->replace('_', ' ')->title() }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="8">@include('layouts.partials.empty-state', ['message' => 'Belum ada data ringkasan desa.'])</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </section>
+@endif
+
+<section class="dashboard-bottom">
+    <article class="card" id="peta" style="margin:0;">
+        <div class="panel-title">
+            <h3>Peta Lokasi Pelanggan & Titik Distribusi</h3>
+        </div>
+        <div class="map-preview">
+            <div class="map-river"></div>
+            <span class="map-pin" style="top:22%;left:28%;"></span>
+            <span class="map-pin" style="top:41%;left:57%;"></span>
+            <span class="map-pin" style="top:64%;left:38%;"></span>
+            <span class="map-pin" style="top:70%;left:71%;"></span>
+        </div>
+    </article>
+
+    <article class="card" id="keluhan" style="margin:0;">
+        <div class="panel-title">
+            <h3>Notifikasi & Aktivitas Keluhan</h3>
         </div>
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button class="logout-btn" type="submit">Keluar dari Sistem</button>
-        </form>
-    </aside>
-
-    <main class="content">
-        <header class="topbar">
-            <div>
-                <h2>{{ $dashboardTitle }}</h2>
-                <small style="color: var(--text-soft);">{{ $namaUnitPengelola ? 'Identitas pengelola aktif: '.$namaUnitPengelola : 'Panel kontrol layanan air bersih desa yang profesional & terpercaya.' }}</small>
-            </div>
-
-            <label class="search">
-                🔎
-                <input type="text" placeholder="Cari pelanggan, tagihan, atau lokasi...">
-            </label>
-
-            <div class="top-actions">
-                <div class="chip">🔔</div>
-                <div class="profile">
-                    <div class="avatar">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
-                    <div>
-                        <strong style="font-size:.87rem;">{{ $user->name }}</strong><br>
-                        <small style="color: var(--text-soft);">{{ $role?->name ?? 'Admin' }}</small>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <section class="hero">
-            <h3>Ringkasan Kinerja Pelayanan Air Bersih Desa</h3>
-            <p>{{ $dashboardDescription }}</p>
-            <div class="hero-stats">
-                @if($isKecamatanDashboard)
-                    <div><small>Jumlah Desa Aktif</small><strong>{{ number_format($jumlahDesaAktif, 0, ',', '.') }}</strong></div>
-                    <div><small>Total Pelanggan Rumah Tangga</small><strong>{{ number_format($totalPelanggan, 0, ',', '.') }}</strong></div>
-                    <div><small>Total Pemakaian Kecamatan</small><strong>{{ number_format($totalPemakaianM3, 0, ',', '.') }} m³</strong></div>
-                    <div><small>Total Tunggakan Setoran Desa</small><strong>Rp {{ number_format($totalTunggakan, 0, ',', '.') }}</strong></div>
-                @else
-                    <div><small>Jumlah Pelanggan Aktif</small><strong>{{ number_format($totalPelanggan, 0, ',', '.') }}</strong></div>
-                    <div><small>Jumlah Gangguan Tercatat</small><strong>{{ number_format($totalGangguan, 0, ',', '.') }}</strong></div>
-                    <div><small>Tingkat Pembayaran</small><strong>{{ $paymentPercent }}%</strong></div>
-                    <div><small>Total Tunggakan</small><strong>Rp {{ number_format($totalTunggakan, 0, ',', '.') }}</strong></div>
-                @endif
-            </div>
-        </section>
-
-        <section id="statistik" class="cards">
-            <article class="stat-card">
-                <div class="big-icon">👥</div>
-                <h4>{{ $isKecamatanDashboard ? 'Total Pelanggan Rumah Tangga' : 'Total Pelanggan' }}</h4>
-                <strong>{{ number_format($totalPelanggan, 0, ',', '.') }}</strong>
-            </article>
-            <article class="stat-card">
-                <div class="big-icon">🧾</div>
-                <h4>{{ $isKecamatanDashboard ? 'Total Tagihan Desa ke Kecamatan' : 'Total Tagihan' }}</h4>
-                <strong>Rp {{ number_format($totalTagihan, 0, ',', '.') }}</strong>
-            </article>
-            <article class="stat-card">
-                <div class="big-icon">💳</div>
-                <h4>{{ $isKecamatanDashboard ? 'Total Pembayaran Desa ke Kecamatan' : 'Total Pembayaran' }}</h4>
-                <strong>Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</strong>
-            </article>
-            <article class="stat-card">
-                <div class="big-icon">📍</div>
-                <h4>Gangguan Layanan</h4>
-                <strong>{{ number_format($totalGangguan, 0, ',', '.') }} Kasus</strong>
-            </article>
-        </section>
-
-        <section class="grid-main">
-            <article class="panel">
-                <h4>{{ $isKecamatanDashboard ? 'Grafik Kepatuhan Setoran per Desa' : 'Grafik Pendapatan • Tagihan • Pembayaran' }}</h4>
-                <div class="bar-chart">
-                    @foreach ($months as $month)
-                        <div class="bar-wrap">
-                            <div class="bar" style="height: {{ $month['value'] }}%;"></div>
-                            <div style="margin-top: 6px;">{{ $month['label'] }}</div>
+        @if(($user?->role?->name ?? null) === 'petugas_lapangan')
+            <div class="activity-list" style="margin-bottom:16px;">
+                @forelse(($latestNotifications ?? []) as $notification)
+                    <div class="activity-item">
+                        <div>
+                            <strong>{{ data_get($notification->data, 'judul', 'Keluhan Baru') }}</strong>
+                            <div class="muted" style="font-size:.82rem;margin-top:4px;">{{ data_get($notification->data, 'message', '-') }}</div>
                         </div>
-                    @endforeach
-                </div>
-            </article>
-
-            <article id="monitoring" class="panel" style="position:relative;">
-                <h4>Panel Monitoring Petugas</h4>
-                <div class="ring-wrap">
-                    <div class="ring" style="--angle: {{ $paymentPercent }}%;"></div>
-                    <div class="ring-label">{{ $paymentPercent }}%</div>
-                    <div>
-                        <strong>Kepatuhan Pembayaran</strong>
-                        <p style="margin: 6px 0 0; color: var(--text-soft); font-size: .88rem;">Persentase pembayaran terhadap total tagihan berjalan.</p>
                     </div>
-                </div>
-                <div class="monitor-list">
-                    <div class="item"><span>Shift Pagi - Unit Distribusi Utara</span><span class="badge">Normal</span></div>
-                    <div class="item"><span>Shift Siang - Unit Distribusi Tengah</span><span class="badge">Stabil</span></div>
-                    <div class="item"><span>Shift Malam - Unit Distribusi Selatan</span><span class="badge warn">Perlu Pengecekan</span></div>
-                </div>
-            </article>
-        </section>
-
-
-        @if($isKecamatanDashboard)
-        <section class="panel" style="overflow:auto;">
-            <h4>Ringkasan Kecamatan per Desa (Periode {{ $selectedPeriod }})</h4>
-            <table style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr>
-                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Desa</th>
-                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Jml Pelanggan</th>
-                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Pemakaian</th>
-                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Tagihan RT</th>
-                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Pembayaran RT</th>
-                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Tagihan Kec.</th>
-                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Pembayaran Kec.</th>
-                        <th style="text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);padding:8px;">Status Setoran</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($villageSummaries as $row)
-                        <tr>
-                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">{{ $row['desa'] }}</td>
-                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">{{ number_format($row['jumlah_pelanggan'], 0, ',', '.') }}</td>
-                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">{{ number_format($row['total_pemakaian_m3'], 0, ',', '.') }} m³</td>
-                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">Rp {{ number_format($row['total_tagihan_rumah_tangga'], 0, ',', '.') }}</td>
-                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">Rp {{ number_format($row['total_pembayaran_rumah_tangga'], 0, ',', '.') }}</td>
-                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">Rp {{ number_format($row['total_tagihan_kecamatan'], 0, ',', '.') }}</td>
-                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">Rp {{ number_format($row['total_pembayaran_kecamatan'], 0, ',', '.') }}</td>
-                            <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.12);">{{ str($row['status_setoran'])->replace('_', ' ')->title() }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="8" style="padding:8px;">Belum ada data ringkasan desa.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </section>
+                @empty
+                    <div class="activity-item"><span class="muted">Belum ada notifikasi baru.</span></div>
+                @endforelse
+            </div>
         @endif
 
-        <section class="grid-bottom">
-            <article id="peta" class="panel">
-                <h4>Peta Lokasi Pelanggan & Titik Distribusi</h4>
-                <div class="map">
-                    <div class="river"></div>
-                    <span class="pin" style="top: 22%; left: 28%;"></span>
-                    <span class="pin" style="top: 41%; left: 57%;"></span>
-                    <span class="pin" style="top: 64%; left: 38%;"></span>
-                    <span class="pin" style="top: 70%; left: 71%;"></span>
-                    <div class="map-note">
-                        <strong>Zona Layanan Dominan</strong>
-                        <div style="color:var(--text-soft); margin-top: 4px;">Titik pelanggan aktif terpusat di area tengah dan selatan desa.</div>
+        <div class="activity-list">
+            @forelse(($recentKeluhan ?? []) as $keluhan)
+                <div class="activity-item">
+                    <div>
+                        <strong>{{ $keluhan->judul }}</strong>
+                        <div class="muted" style="font-size:.82rem;margin-top:4px;">Dilaporkan {{ optional($keluhan->reported_at)->diffForHumans() ?? '-' }}</div>
                     </div>
+                    <span class="badge {{ $keluhan->status_penanganan === 'selesai' ? 'badge-success' : 'badge-warning' }}">{{ ucfirst($keluhan->status_penanganan) }}</span>
                 </div>
-            </article>
-
-            <article id="keluhan" class="panel">
-                <h4>Notifikasi & Aktivitas Keluhan Terbaru</h4>
-                @if(($user->role?->name ?? null) === 'petugas_lapangan')
-                    <div style="margin-bottom:10px;">
-                        <strong style="font-size:.86rem;">Notifikasi Masuk</strong>
-                        <div class="complaint-list">
-                            @forelse(($latestNotifications ?? []) as $notification)
-                                <div class="item">
-                                    <div>
-                                        <strong style="font-size:.85rem;">{{ data_get($notification->data, 'judul', 'Keluhan Baru') }}</strong>
-                                        <div style="font-size:.78rem; color:var(--text-soft);">{{ data_get($notification->data, 'message', '-') }}</div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="item"><div style="font-size:.85rem;color:var(--text-soft);">Belum ada notifikasi baru.</div></div>
-                            @endforelse
-                        </div>
-                    </div>
-                @endif
-                <div class="complaint-list">
-                    @forelse(($recentKeluhan ?? []) as $keluhan)
-                        <div class="item">
-                            <div>
-                                <strong style="font-size:.88rem;">{{ $keluhan->judul }}</strong>
-                                <div style="font-size:.78rem; color:var(--text-soft);">Dilaporkan {{ optional($keluhan->reported_at)->diffForHumans() ?? '-' }}</div>
-                            </div>
-                            <span class="badge {{ $keluhan->status_penanganan === 'selesai' ? '' : 'warn' }}">{{ ucfirst($keluhan->status_penanganan) }}</span>
-                        </div>
-                    @empty
-                        <div class="item"><div style="font-size:.85rem;color:var(--text-soft);">Belum ada aktivitas keluhan terbaru.</div></div>
-                    @endforelse
-                </div>
-            </article>
-        </section>
-    </main>
-</div>
-</body>
-</html>
+            @empty
+                <div class="activity-item"><span class="muted">Belum ada aktivitas keluhan terbaru.</span></div>
+            @endforelse
+        </div>
+    </article>
+</section>
+@endsection

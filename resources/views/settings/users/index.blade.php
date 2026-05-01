@@ -51,11 +51,11 @@
                     </td>
                     <td>
                         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                            <a class="btn btn-outline btn-sm" href="{{ route('settings.users.edit', $managedUser) }}">Edit</a>
+                            <a class="btn btn-soft-primary btn-sm btn-icon" href="{{ route('settings.users.edit', $managedUser) }}" title="Edit"><i class="bi bi-pencil"></i></a>
                             <form method="POST" action="{{ route('settings.users.destroy', $managedUser) }}" onsubmit="return confirm('Hapus user ini?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                <button type="submit" class="btn btn-soft-danger btn-sm btn-icon" title="Hapus"><i class="bi bi-trash"></i></button>
                             </form>
                         </div>
                     </td>

@@ -66,7 +66,7 @@
                         <form method="POST" action="{{ route('settings.tarif.destroy-desa', $tarif) }}" onsubmit="return confirm('Hapus tarif ini?')" style="margin-top:6px;">
                             @csrf
                             @method('DELETE')
-                            <button class="btn btn-danger btn-sm" type="submit">Hapus</button>
+                            <button class="btn btn-soft-danger btn-sm btn-icon" type="submit" title="Hapus"><i class="bi bi-trash"></i></button>
                         </form>
                     </details>
                 </td>

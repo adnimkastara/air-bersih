@@ -29,11 +29,11 @@
                     <td>{{ $desa->kecamatan->name }}</td>
                     <td>
                         <div style="display:flex;gap:8px;">
-                            <a href="{{ route('desa.edit', $desa) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+                            <a href="{{ route('desa.edit', $desa) }}" class="btn btn-soft-primary btn-sm btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
                             <form action="{{ route('desa.destroy', $desa) }}" method="POST" onsubmit="return confirm('Hapus desa ini?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                <button type="submit" class="btn btn-soft-danger btn-sm btn-icon" title="Hapus"><i class="bi bi-trash"></i></button>
                             </form>
                         </div>
                     </td>

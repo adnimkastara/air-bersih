@@ -45,11 +45,18 @@
                     <a class="{{ request()->routeIs('settings.users.*') ? 'active' : '' }}" href="{{ route('settings.users.index') }}"><i class="bi bi-person-gear"></i> Manajemen User</a>
                     <a class="{{ request()->routeIs('settings.tarif.*') ? 'active' : '' }}" href="{{ route('settings.tarif.index') }}"><i class="bi bi-cash-coin"></i> Setting Tarif</a>
                     <a class="{{ request()->routeIs('settings.app.*') ? 'active' : '' }}" href="{{ route('settings.app.edit') }}"><i class="bi bi-sliders"></i> Setting Aplikasi</a>
+                    <a class="{{ request()->routeIs('profile.password.*') ? 'active' : '' }}" href="{{ route('profile.password.edit') }}"><i class="bi bi-key"></i> Ganti Password</a>
+                </div>
+            </div>
+        @else
+            <div class="menu-group">
+                <div class="menu-group-title">Pengaturan</div>
+                <div class="submenu">
+                    <a class="{{ request()->routeIs('profile.password.*') ? 'active' : '' }}" href="{{ route('profile.password.edit') }}"><i class="bi bi-key"></i> Ganti Password</a>
                 </div>
             </div>
         @endif
 
-        <a class="{{ request()->routeIs('profile.password.*') ? 'active' : '' }}" href="{{ route('profile.password.edit') }}"><i class="bi bi-key"></i> Ganti Password</a>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit"><i class="bi bi-box-arrow-right"></i> Logout</button>
